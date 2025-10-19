@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EspeculApp - Simulador Electoral</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🗳️ EspeculApp</h1>
+            <p class="subtitle">Simulador de Escenarios Electorales</p>
+            <div id="eleccion-info"></div>
+        </header>
+
+        <main>
+            <!-- Sección de Resultados Globales -->
+            <section class="resultados-globales">
+                <h2>📊 Resultado Global</h2>
+                <div id="grafico-resultados" class="grafico-barras"></div>
+                <div class="total-votos-info">
+                    <div class="stat-box">
+                        <span class="stat-label">Total Electores</span>
+                        <span class="stat-value" id="total-electores">0</span>
+                    </div>
+                    <div class="stat-box">
+                        <span class="stat-label">Votos Válidos</span>
+                        <span class="stat-value" id="total-votos-validos">0</span>
+                    </div>
+                    <div class="stat-box">
+                        <span class="stat-label">Participación</span>
+                        <span class="stat-value" id="participacion-global">0%</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Sección de Grupos -->
+            <section class="grupos-container">
+                <h2>⚙️ Configurar Grupos Electorales</h2>
+                <div id="grupos-grid" class="grupos-grid"></div>
+            </section>
+        </main>
+
+        <footer>
+            <p>EspeculApp © 2025 - Simulador Electoral</p>
+        </footer>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

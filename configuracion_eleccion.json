@@ -1,0 +1,100 @@
+{
+  "eleccion": {
+    "nombre": "Elecciones Nacionales Santa Fe 2025",
+    "fecha": "26/10/2025",
+    "frentes": [
+      {
+        "id": "frente_1",
+        "nombre": "Frente Patria",
+        "color": "#4A90E2",
+        "abreviatura": "FP"
+      },
+      {
+        "id": "frente_2",
+        "nombre": "La Libertad Avanza",
+        "color": "#7B68EE",
+        "abreviatura": "LLA"
+      },
+      {
+        "id": "frente_3",
+        "nombre": "Provincias Unidas",
+        "color": "#f5a110",
+        "abreviatura": "PU"
+      },
+      {
+        "id": "otros",
+        "nombre": "Otros",
+        "color": "#FFA07A",
+        "abreviatura": "Otros"
+      }
+    ],
+    "escenarios": [
+      {
+        "id": "escenario_1",
+        "nombre": "FP / LLA / PU",
+        "porcentajes": {
+          "frente_1": 40,
+          "frente_2": 30,
+          "frente_3": 18,
+          "otros": 6,
+          "blancos": 6
+        }
+      },
+      {
+        "id": "escenario_2",
+        "nombre": "FP / PU / LLA",
+        "porcentajes": {
+          "frente_1": 40,
+          "frente_3": 30,
+          "frente_2": 18,
+          "otros": 6,
+          "blancos": 6
+        }
+      },
+      {
+        "id": "escenario_3",
+        "nombre": "LLA / FP / PU",
+        "porcentajes": {
+          "frente_2": 40,
+          "frente_1": 30,
+          "frente_3": 18,
+          "otros": 6,
+          "blancos": 6
+        }
+      },
+      {
+        "id": "escenario_4",
+        "nombre": "LLA / PU / FP",
+        "porcentajes": {
+          "frente_2": 40,
+          "frente_3": 30,
+          "frente_1": 18,
+          "otros": 6,
+          "blancos": 6
+        }
+      },
+      {
+        "id": "escenario_5",
+        "nombre": "PU / FP / LLA",
+        "porcentajes": {
+          "frente_3": 40,
+          "frente_1": 30,
+          "frente_2": 18,
+          "otros": 6,
+          "blancos": 6
+        }
+      },
+      {
+        "id": "escenario_6",
+        "nombre": "PU / LLA / FP",
+        "porcentajes": {
+          "frente_3": 40,
+          "frente_2": 30,
+          "frente_1": 18,
+          "otros": 6,
+          "blancos": 6
+        }
+      }
+    ]
+  }
+}
