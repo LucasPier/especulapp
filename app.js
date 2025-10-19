@@ -2,12 +2,22 @@
 let configEleccion = null;
 let configGrupos = null;
 let estadoGrupos = {};
+let incluirBlancosComoValidos = true;
+let datosServidor = null;
+let gruposConDatosReales = new Set();
+let intervaloPolleoId = null;
+let ultimaConsulta = null;
 
 // Inicialización
 document.addEventListener('DOMContentLoaded', async () => {
     await cargarConfiguraciones();
+    await cargarDatosServidor(); // Cargar datos reales del servidor
     inicializarEstadoGrupos();
     renderizarUI();
+    inicializarControlesGenerales();
+    configurarBotonesPromedio(); // Configurar botones de promedio en modales
+    inicializarPolleo(); // Iniciar polling automático
+    inicializarDeteccionVisibilidad(); // Detectar cuando el usuario vuelve a la app
     calcularYActualizarResultados();
 });
 
@@ -29,6 +39,69 @@ async function cargarConfiguraciones() {
         console.error('Error al cargar configuraciones:', error);
         alert('Error al cargar las configuraciones. Verifica que los archivos JSON existan.');
     }
+}
+
+// Cargar datos reales desde el servidor (simula consulta a API)
+async function cargarDatosServidor() {
+    try {
+        const respuesta = await fetch('datos_servidor.json');
+        datosServidor = await respuesta.json();
+        ultimaConsulta = new Date();
+        
+        // Actualizar conjunto de grupos con datos reales
+        gruposConDatosReales.clear();
+        if (datosServidor && datosServidor.grupos_con_datos) {
+            datosServidor.grupos_con_datos.forEach(grupo => {
+                gruposConDatosReales.add(grupo.id);
+            });
+        }
+        
+        // console.log('Datos del servidor cargados:', datosServidor);
+        // console.log('Grupos con datos reales:', Array.from(gruposConDatosReales));
+        
+        // Actualizar UI solo si ya está inicializada (no en la primera carga)
+        if (configGrupos && Object.keys(estadoGrupos).length > 0) {
+            renderizarUI();
+            calcularYActualizarResultados();
+            configurarBotonesPromedio(); // Actualizar estado de botones de promedio
+        }
+    } catch (error) {
+        console.error('Error al cargar datos del servidor:', error);
+        // No mostrar alerta, puede ser que aún no haya datos disponibles
+    }
+}
+
+// Inicializar polling automático (cada 60 segundos)
+function inicializarPolleo() {
+    // Limpiar intervalo anterior si existe
+    if (intervaloPolleoId) {
+        clearInterval(intervaloPolleoId);
+    }
+    
+    // Consultar cada 60 segundos (solo si la página está visible)
+    intervaloPolleoId = setInterval(async () => {
+        if (!document.hidden) {
+            // console.log('Actualizando datos del servidor...');
+            await cargarDatosServidor();
+        }
+    }, 60000); // 60 segundos
+}
+
+// Detectar cuando el usuario vuelve a la aplicación
+function inicializarDeteccionVisibilidad() {
+    document.addEventListener('visibilitychange', async () => {
+        if (!document.hidden) {
+            // Usuario volvió a la aplicación
+            const ahora = new Date();
+            const tiempoTranscurrido = ultimaConsulta ? (ahora - ultimaConsulta) / 1000 : Infinity;
+            
+            // Si pasó más de 1 minuto, actualizar
+            if (tiempoTranscurrido > 60) {
+                // console.log('Usuario volvió a la app, actualizando datos...');
+                await cargarDatosServidor();
+            }
+        }
+    });
 }
 
 // Inicializar estado de cada grupo con valores por defecto
@@ -68,15 +141,218 @@ function aplicarEscenario(grupoId, escenarioId) {
     estado.escenarioActivo = escenarioId;
 }
 
+// Función auxiliar para obtener el indicador visual (emoji o círculo) según el tipo
+function obtenerIndicadorVisual(resultado) {
+    if (resultado.id === 'nulos') {
+        return '❌'; // Cruz roja para nulos
+    }
+    // Para todos los demás (frentes y blancos), usar círculo de color
+    return `<span class="color-indicator" style="background-color: ${resultado.color}"></span>`;
+}
+
 // Renderizar interfaz de usuario
 function renderizarUI() {
     const gruposGrid = document.getElementById('grupos-grid');
-    gruposGrid.innerHTML = '';
+    
+    // Si ya hay tarjetas renderizadas, solo actualizarlas
+    const tarjetasExistentes = gruposGrid.querySelectorAll('.grupo-card');
+    if (tarjetasExistentes.length > 0) {
+        // Actualizar tarjetas existentes sin recrearlas
+        configGrupos.grupos.forEach(grupo => {
+            actualizarTarjetaGrupo(grupo);
+        });
+    } else {
+        // Primera vez: crear todas las tarjetas
+        gruposGrid.innerHTML = '';
+        configGrupos.grupos.forEach(grupo => {
+            const grupoCard = crearTarjetaGrupo(grupo);
+            gruposGrid.appendChild(grupoCard);
+        });
+    }
+}
 
-    configGrupos.grupos.forEach(grupo => {
-        const grupoCard = crearTarjetaGrupo(grupo);
-        gruposGrid.appendChild(grupoCard);
-    });
+// Nueva función para actualizar una tarjeta sin recrearla
+function actualizarTarjetaGrupo(grupo) {
+    const card = document.getElementById(`grupo-${grupo.id}`);
+    if (!card) return;
+    
+    const tienesDatosReales = gruposConDatosReales.has(grupo.id);
+    const esActualmenteDatosReales = card.querySelector('.badge-datos-reales') !== null;
+    
+    // Si el tipo de tarjeta cambió (de simulación a datos reales o viceversa), recrear
+    if (tienesDatosReales !== esActualmenteDatosReales) {
+        const nuevaTarjeta = crearTarjetaGrupo(grupo);
+        card.replaceWith(nuevaTarjeta);
+        return;
+    }
+    
+    // Si tiene datos reales, actualizar solo los valores
+    if (tienesDatosReales) {
+        actualizarTarjetaDatosReales(card, grupo);
+    }
+    // Si es simulación, no hacer nada (ya se actualiza con los event listeners)
+}
+
+// Nueva función para actualizar tarjeta con datos reales sin recrearla
+function actualizarTarjetaDatosReales(card, grupo) {
+    const datosGrupo = datosServidor.grupos_con_datos.find(g => g.id === grupo.id);
+    if (!datosGrupo) return;
+    
+    // Actualizar porcentaje de escrutinio y participación
+    const infoEscrutinio = card.querySelector('.grupo-info-escrutinio');
+    if (infoEscrutinio) {
+        const participacion = datosGrupo.electores > 0 
+            ? (datosGrupo.asistentes / datosGrupo.electores * 100).toFixed(2)
+            : 0;
+        infoEscrutinio.innerHTML = `
+            <div>✅ Escrutado: ${datosGrupo.porcentaje_escrutado}%</div>
+            <div>📈 Participación: ${participacion}%</div>
+        `;
+    }
+    
+    // Actualizar gráfico de barras
+    const graficoBarras = card.querySelector('.grupo-grafico-barras');
+    if (graficoBarras) {
+        // Calcular resultados
+        const resultados = [];
+        configEleccion.eleccion.frentes.forEach(frente => {
+            const votos = datosGrupo.frentes[frente.id] || 0;
+            const porcentaje = datosGrupo.votosValidos > 0 
+                ? (votos / datosGrupo.votosValidos * 100).toFixed(2)
+                : 0;
+            
+            resultados.push({
+                id: frente.id,
+                nombre: frente.nombre,
+                color: frente.color,
+                votos: votos,
+                porcentaje: parseFloat(porcentaje),
+                esBarra: true
+            });
+        });
+        
+        // Agregar blancos
+        const porcentajeBlancos = incluirBlancosComoValidos
+            ? (datosGrupo.votosValidos > 0 ? (datosGrupo.blancos / datosGrupo.votosValidos * 100).toFixed(2) : 0)
+            : (datosGrupo.asistentes > 0 ? (datosGrupo.blancos / datosGrupo.asistentes * 100).toFixed(2) : 0);
+        
+        resultados.push({
+            id: 'blancos',
+            nombre: 'Votos Blancos',
+            color: '#95a5a6',
+            votos: datosGrupo.blancos,
+            porcentaje: parseFloat(porcentajeBlancos),
+            esBarra: incluirBlancosComoValidos,
+            orden: incluirBlancosComoValidos ? 0 : 2
+        });
+        
+        // Agregar nulos
+        const porcentajeNulos = datosGrupo.asistentes > 0 
+            ? (datosGrupo.nulos / datosGrupo.asistentes * 100).toFixed(2)
+            : 0;
+        
+        resultados.push({
+            id: 'nulos',
+            nombre: 'Votos Nulos',
+            color: '#7f8c8d',
+            votos: datosGrupo.nulos,
+            porcentaje: parseFloat(porcentajeNulos),
+            esBarra: false,
+            orden: 3
+        });
+        
+        // Ordenar resultados
+        resultados.sort((a, b) => {
+            const ordenA = a.orden !== undefined ? a.orden : 0;
+            const ordenB = b.orden !== undefined ? b.orden : 0;
+            if (ordenA !== ordenB) return ordenA - ordenB;
+            return b.porcentaje - a.porcentaje;
+        });
+        
+        // Verificar si la estructura cambió (número de barras o tipo de barra)
+        const barrasExistentes = graficoBarras.children;
+        let necesitaReconstruir = barrasExistentes.length !== resultados.length;
+        
+        if (!necesitaReconstruir) {
+            // Verificar si algún elemento cambió de tipo (con barra vs sin barra)
+            for (let i = 0; i < resultados.length; i++) {
+                const barraExistente = barrasExistentes[i];
+                const tieneBarraFill = barraExistente.querySelector('.barra-progreso-mini') !== null;
+                if ((resultados[i].esBarra && !tieneBarraFill) || (!resultados[i].esBarra && tieneBarraFill)) {
+                    necesitaReconstruir = true;
+                    break;
+                }
+            }
+        }
+        
+        if (necesitaReconstruir) {
+            // Recrear todo el gráfico
+            let graficoHTML = '';
+            resultados.forEach(resultado => {
+                if (resultado.esBarra === false) {
+                    graficoHTML += `
+                        <div class="barra-contenedor-mini">
+                            <div class="barra-info-mini">
+                                <span class="frente-nombre-mini">
+                                    ${obtenerIndicadorVisual(resultado)}
+                                    ${resultado.nombre}
+                                </span>
+                                <span>
+                                    <span class="frente-porcentaje-mini">${resultado.porcentaje.toFixed(2)}%</span>
+                                    <span class="frente-votos-mini">(${formatearNumero(resultado.votos)})</span>
+                                </span>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    graficoHTML += `
+                        <div class="barra-contenedor-mini">
+                            <div class="barra-info-mini">
+                                <span class="frente-nombre-mini">
+                                    ${obtenerIndicadorVisual(resultado)}
+                                    ${resultado.nombre}
+                                </span>
+                                <span>
+                                    <span class="frente-porcentaje-mini">${resultado.porcentaje.toFixed(2)}%</span>
+                                    <span class="frente-votos-mini">(${formatearNumero(resultado.votos)})</span>
+                                </span>
+                            </div>
+                            <div class="barra-progreso-mini">
+                                <div class="barra-fill" 
+                                     style="width: ${resultado.porcentaje}%; background-color: ${resultado.color}">
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+            });
+            graficoBarras.innerHTML = graficoHTML;
+        } else {
+            // Solo actualizar valores existentes
+            resultados.forEach((resultado, index) => {
+                const barraExistente = barrasExistentes[index];
+                
+                if (barraExistente) {
+                    // Actualizar valores de la barra existente
+                    const porcentajeSpan = barraExistente.querySelector('.frente-porcentaje-mini');
+                    const votosSpan = barraExistente.querySelector('.frente-votos-mini');
+                    const barraFill = barraExistente.querySelector('.barra-fill');
+                    
+                    if (porcentajeSpan) porcentajeSpan.textContent = `${resultado.porcentaje.toFixed(2)}%`;
+                    if (votosSpan) votosSpan.textContent = `(${formatearNumero(resultado.votos)})`;
+                    if (barraFill) barraFill.style.width = `${resultado.porcentaje}%`;
+                }
+            });
+        }
+    }
+    
+    // Actualizar datos adicionales
+    const datosAdicionales = card.querySelector('.datos-adicionales');
+    if (datosAdicionales) {
+        const datoItems = datosAdicionales.querySelectorAll('.dato-value');
+        if (datoItems[0]) datoItems[0].textContent = formatearNumero(datosGrupo.asistentes);
+        if (datoItems[1]) datoItems[1].textContent = formatearNumero(datosGrupo.votosValidos);
+    }
 }
 
 // Crear tarjeta de grupo
@@ -85,12 +361,165 @@ function crearTarjetaGrupo(grupo) {
     card.className = 'grupo-card';
     card.id = `grupo-${grupo.id}`;
 
+    // Verificar si el grupo tiene datos reales
+    const tienesDatosReales = gruposConDatosReales.has(grupo.id);
+    
+    if (tienesDatosReales) {
+        // Renderizar grupo con datos reales
+        renderizarGrupoConDatosReales(card, grupo);
+    } else {
+        // Renderizar grupo con controles de simulación
+        renderizarGrupoSimulacion(card, grupo);
+    }
+
+    return card;
+}
+
+// Renderizar grupo con datos reales del servidor
+function renderizarGrupoConDatosReales(card, grupo) {
+    const datosGrupo = datosServidor.grupos_con_datos.find(g => g.id === grupo.id);
+    
+    if (!datosGrupo) return;
+    
+    // Calcular porcentajes
+    const resultados = [];
+    configEleccion.eleccion.frentes.forEach(frente => {
+        const votos = datosGrupo.frentes[frente.id] || 0;
+        const porcentaje = datosGrupo.votosValidos > 0 
+            ? (votos / datosGrupo.votosValidos * 100).toFixed(2)
+            : 0;
+        
+        resultados.push({
+            id: frente.id,
+            nombre: frente.nombre,
+            color: frente.color,
+            votos: votos,
+            porcentaje: parseFloat(porcentaje),
+            esBarra: true
+        });
+    });
+    
+    // Agregar blancos si se cuentan como válidos
+    const porcentajeBlancos = incluirBlancosComoValidos
+        ? (datosGrupo.votosValidos > 0 ? (datosGrupo.blancos / datosGrupo.votosValidos * 100).toFixed(2) : 0)
+        : (datosGrupo.asistentes > 0 ? (datosGrupo.blancos / datosGrupo.asistentes * 100).toFixed(2) : 0);
+    
+    resultados.push({
+        id: 'blancos',
+        nombre: 'Votos Blancos',
+        color: '#95a5a6',
+        votos: datosGrupo.blancos,
+        porcentaje: parseFloat(porcentajeBlancos),
+        esBarra: incluirBlancosComoValidos,
+        orden: incluirBlancosComoValidos ? 0 : 2
+    });
+    
+    // Agregar nulos
+    const porcentajeNulos = datosGrupo.asistentes > 0 
+        ? (datosGrupo.nulos / datosGrupo.asistentes * 100).toFixed(2)
+        : 0;
+    
+    resultados.push({
+        id: 'nulos',
+        nombre: 'Votos Nulos',
+        color: '#7f8c8d',
+        votos: datosGrupo.nulos,
+        porcentaje: parseFloat(porcentajeNulos),
+        esBarra: false,
+        orden: 3
+    });
+    
+    // Ordenar resultados
+    resultados.sort((a, b) => {
+        const ordenA = a.orden !== undefined ? a.orden : 0;
+        const ordenB = b.orden !== undefined ? b.orden : 0;
+        if (ordenA !== ordenB) return ordenA - ordenB;
+        return b.porcentaje - a.porcentaje;
+    });
+    
+    // Generar HTML del gráfico
+    let graficoHTML = '<div class="grupo-grafico-barras">';
+    resultados.forEach(resultado => {
+        if (resultado.esBarra === false) {
+            graficoHTML += `
+                <div class="barra-contenedor-mini">
+                    <div class="barra-info-mini">
+                        <span class="frente-nombre-mini">
+                            ${obtenerIndicadorVisual(resultado)}
+                            ${resultado.nombre}
+                        </span>
+                        <span>
+                            <span class="frente-porcentaje-mini">${resultado.porcentaje.toFixed(2)}%</span>
+                            <span class="frente-votos-mini">(${formatearNumero(resultado.votos)})</span>
+                        </span>
+                    </div>
+                </div>
+            `;
+        } else {
+            graficoHTML += `
+                <div class="barra-contenedor-mini">
+                    <div class="barra-info-mini">
+                        <span class="frente-nombre-mini">
+                            ${obtenerIndicadorVisual(resultado)}
+                            ${resultado.nombre}
+                        </span>
+                        <span>
+                            <span class="frente-porcentaje-mini">${resultado.porcentaje.toFixed(2)}%</span>
+                            <span class="frente-votos-mini">(${formatearNumero(resultado.votos)})</span>
+                        </span>
+                    </div>
+                    <div class="barra-progreso-mini">
+                        <div class="barra-fill" 
+                             style="width: ${resultado.porcentaje}%; background-color: ${resultado.color}">
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+    });
+    graficoHTML += '</div>';
+    
+    const participacion = datosGrupo.electores > 0 
+        ? (datosGrupo.asistentes / datosGrupo.electores * 100).toFixed(2)
+        : 0;
+    
+    card.innerHTML = `
+        <div class="grupo-header">
+            <div class="grupo-nombre">
+                ${grupo.nombre}
+                <span class="badge-datos-reales">📊 DATOS REALES</span>
+            </div>
+            <div class="grupo-electores">👥 ${formatearNumero(datosGrupo.electores)} electores</div>
+            <div class="grupo-info-escrutinio">
+                <div>✅ Escrutado: ${datosGrupo.porcentaje_escrutado}%</div>
+                <div>📈 Participación: ${participacion}%</div>
+            </div>
+        </div>
+        <div class="grupo-datos-reales">
+            ${graficoHTML}
+            <div class="datos-adicionales">
+                <div class="dato-item">
+                    <span class="dato-label">Asistentes:</span>
+                    <span class="dato-value">${formatearNumero(datosGrupo.asistentes)}</span>
+                </div>
+                <div class="dato-item">
+                    <span class="dato-label">Votos Válidos:</span>
+                    <span class="dato-value">${formatearNumero(datosGrupo.votosValidos)}</span>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+// Renderizar grupo con controles de simulación
+function renderizarGrupoSimulacion(card, grupo) {
     const estado = estadoGrupos[grupo.id];
 
     let controlesHTML = '';
 
     // Controles para cada frente
     configEleccion.eleccion.frentes.forEach(frente => {
+        const valorInicial = estado.frentes[frente.id] || 0;
         controlesHTML += `
             <div class="control-item">
                 <div class="control-label">
@@ -103,9 +532,10 @@ function crearTarjetaGrupo(grupo) {
                 <input type="range" 
                        min="0" 
                        max="100" 
-                       value="${estado.frentes[frente.id]}"
+                       value="${valorInicial}"
                        data-grupo="${grupo.id}"
                        data-frente="${frente.id}"
+                       data-color="${frente.color}"
                        class="range-frente">
             </div>
         `;
@@ -127,26 +557,13 @@ function crearTarjetaGrupo(grupo) {
                    value="${estado.votosBlancos}"
                    data-grupo="${grupo.id}"
                    data-tipo="blancos"
+                   data-color="#95a5a6"
                    class="range-blancos">
         </div>
     `;
 
-    // Controles de asistencia y nulos (también con range)
+    // Controles de nulos y asistencia (también con range)
     controlesHTML += `
-        <div class="control-item">
-            <div class="control-label">
-                <span>📊 Asistencia (%)</span>
-                <span class="control-value" id="valor-${grupo.id}-asistencia">${estado.asistencia}%</span>
-            </div>
-            <input type="range" 
-                   min="0" 
-                   max="100" 
-                   step="0.1"
-                   value="${estado.asistencia}"
-                   data-grupo="${grupo.id}"
-                   data-tipo="asistencia"
-                   class="range-asistencia">
-        </div>
         <div class="control-item">
             <div class="control-label">
                 <span>❌ Votos Nulos (%)</span>
@@ -160,6 +577,20 @@ function crearTarjetaGrupo(grupo) {
                    data-grupo="${grupo.id}"
                    data-tipo="nulos"
                    class="range-nulos">
+        </div>
+        <div class="control-item">
+            <div class="control-label">
+                <span>📊 Asistencia (%)</span>
+                <span class="control-value" id="valor-${grupo.id}-asistencia">${estado.asistencia}%</span>
+            </div>
+            <input type="range" 
+                   min="0" 
+                   max="100" 
+                   step="0.1"
+                   value="${estado.asistencia}"
+                   data-grupo="${grupo.id}"
+                   data-tipo="asistencia"
+                   class="range-asistencia">
         </div>
     `;
 
@@ -179,7 +610,10 @@ function crearTarjetaGrupo(grupo) {
 
     card.innerHTML = `
         <div class="grupo-header">
-            <div class="grupo-nombre">${grupo.nombre}</div>
+            <div class="grupo-nombre">
+                ${grupo.nombre}
+                <span class="badge-simulacion">🎯 SIMULACIÓN</span>
+            </div>
             <div class="grupo-electores">👥 ${formatearNumero(grupo.electores)} electores</div>
             ${botoneraHTML}
         </div>
@@ -193,36 +627,65 @@ function crearTarjetaGrupo(grupo) {
     agregarEventListeners(card, grupo.id);
     
     // Actualizar labels con porcentajes normalizados
-    setTimeout(() => actualizarLabelsGrupo(grupo.id), 0);
-
-    return card;
+    setTimeout(() => {
+        actualizarLabelsGrupo(grupo.id);
+        actualizarColoresRangeGrupo(grupo.id);
+    }, 0);
 }
 
 // Calcular porcentajes normalizados para un grupo
 function calcularPorcentajesNormalizados(grupoId) {
     const estado = estadoGrupos[grupoId];
-    
-    // Calcular suma de proporciones (frentes + blancos)
-    let sumaProporcion = 0;
-    Object.values(estado.frentes).forEach(valor => {
-        sumaProporcion += valor;
-    });
-    sumaProporcion += estado.votosBlancos;
+    const grupo = configGrupos.grupos.find(g => g.id === grupoId);
     
     const porcentajes = {
         frentes: {},
         blancos: 0
     };
     
-    if (sumaProporcion > 0) {
-        // Calcular porcentaje normalizado para cada frente
-        configEleccion.eleccion.frentes.forEach(frente => {
-            const proporcion = estado.frentes[frente.id];
-            porcentajes.frentes[frente.id] = (proporcion / sumaProporcion * 100);
+    // Inicializar todos los frentes en 0
+    configEleccion.eleccion.frentes.forEach(frente => {
+        porcentajes.frentes[frente.id] = 0;
+    });
+    
+    if (!incluirBlancosComoValidos) {
+        // Si los blancos NO son válidos, se calculan sobre asistentes
+        const asistentes = grupo.electores * estado.asistencia / 100;
+        const nulos = asistentes * estado.votosNulos / 100;
+        const blancos = asistentes * estado.votosBlancos / 100;
+        const votosValidosParaFrentes = asistentes - nulos - blancos;
+        
+        // Calcular suma de proporciones solo de frentes
+        let sumaProporcion = 0;
+        Object.values(estado.frentes).forEach(valor => {
+            sumaProporcion += valor;
         });
         
-        // Calcular porcentaje para votos blancos
-        porcentajes.blancos = (estado.votosBlancos / sumaProporcion * 100);
+        if (sumaProporcion > 0 && votosValidosParaFrentes > 0) {
+            configEleccion.eleccion.frentes.forEach(frente => {
+                const proporcion = estado.frentes[frente.id];
+                const votosFrente = votosValidosParaFrentes * proporcion / sumaProporcion;
+                porcentajes.frentes[frente.id] = (votosFrente / asistentes * 100);
+            });
+        }
+        
+        porcentajes.blancos = estado.votosBlancos;
+    } else {
+        // Si los blancos SÍ son válidos, se incluyen en la proporción
+        let sumaProporcion = 0;
+        Object.values(estado.frentes).forEach(valor => {
+            sumaProporcion += valor;
+        });
+        sumaProporcion += estado.votosBlancos;
+        
+        if (sumaProporcion > 0) {
+            configEleccion.eleccion.frentes.forEach(frente => {
+                const proporcion = estado.frentes[frente.id];
+                porcentajes.frentes[frente.id] = (proporcion / sumaProporcion * 100);
+            });
+            
+            porcentajes.blancos = (estado.votosBlancos / sumaProporcion * 100);
+        }
     }
     
     return porcentajes;
@@ -231,16 +694,68 @@ function calcularPorcentajesNormalizados(grupoId) {
 // Actualizar labels de porcentajes en un grupo
 function actualizarLabelsGrupo(grupoId) {
     const porcentajes = calcularPorcentajesNormalizados(grupoId);
+    const resultados = calcularResultadosGrupo(configGrupos.grupos.find(g => g.id === grupoId));
     
-    // Actualizar labels de frentes
+    // Actualizar labels de frentes con el mismo formato que datos reales
     configEleccion.eleccion.frentes.forEach(frente => {
         const porcentaje = porcentajes.frentes[frente.id].toFixed(2);
-        document.getElementById(`valor-${grupoId}-${frente.id}`).textContent = `${porcentaje}%`;
+        const votos = resultados.frentes[frente.id];
+        const elemento = document.getElementById(`valor-${grupoId}-${frente.id}`);
+        if (elemento) {
+            elemento.innerHTML = `<span style="font-weight: 700; color: var(--primary-color);">${porcentaje}%</span> <span style="color: var(--text-secondary); font-size: 0.85em;">(${formatearNumero(votos)})</span>`;
+        }
     });
     
-    // Actualizar label de blancos
+    // Actualizar label de blancos con el mismo formato
     const porcentajeBlancos = porcentajes.blancos.toFixed(2);
-    document.getElementById(`valor-${grupoId}-blancos`).textContent = `${porcentajeBlancos}%`;
+    const votosBlancos = resultados.blancos;
+    const elementoBlancos = document.getElementById(`valor-${grupoId}-blancos`);
+    if (elementoBlancos) {
+        elementoBlancos.innerHTML = `<span style="font-weight: 700; color: var(--primary-color);">${porcentajeBlancos}%</span> <span style="color: var(--text-secondary); font-size: 0.85em;">(${formatearNumero(votosBlancos)})</span>`;
+    }
+    
+    // Actualizar label de nulos con el mismo formato (solo para grupos de simulación)
+    const elementoNulos = document.getElementById(`valor-${grupoId}-nulos`);
+    if (elementoNulos && resultados.asistentes !== undefined) {
+        const porcentajeNulos = resultados.asistentes > 0 
+            ? (resultados.nulos / resultados.asistentes * 100).toFixed(2)
+            : '0.00';
+        const votosNulos = resultados.nulos;
+        elementoNulos.innerHTML = `<span style="font-weight: 700; color: var(--primary-color);">${porcentajeNulos}%</span> <span style="color: var(--text-secondary); font-size: 0.85em;">(${formatearNumero(votosNulos)})</span>`;
+    }
+}
+
+// Actualizar color de fondo de un input range basado en su valor
+function actualizarColorRangeInput(input) {
+    const valor = parseFloat(input.value);
+    const max = parseFloat(input.max);
+    const color = input.dataset.color;
+    
+    // Calcular el porcentaje
+    const porcentaje = (valor / max) * 100;
+    
+    // Caso especial: blancos solo muestran color si se incluyen como válidos
+    const esBlancos = input.classList.contains('range-blancos');
+    const colorFinal = (esBlancos && !incluirBlancosComoValidos) ? '#ddd' : color;
+    
+    // Aplicar gradiente: color hasta el valor, gris después
+    input.style.background = `linear-gradient(to right, ${colorFinal} 0%, ${colorFinal} ${porcentaje}%, #ddd ${porcentaje}%, #ddd 100%)`;
+}
+
+// Actualizar todos los colores de range inputs en un grupo
+function actualizarColoresRangeGrupo(grupoId) {
+    const card = document.getElementById(`grupo-${grupoId}`);
+    if (!card) return;
+    
+    // Actualizar ranges de frentes
+    card.querySelectorAll('.range-frente').forEach(input => {
+        actualizarColorRangeInput(input);
+    });
+    
+    // Actualizar range de blancos
+    card.querySelectorAll('.range-blancos').forEach(input => {
+        actualizarColorRangeInput(input);
+    });
 }
 
 // Actualizar inputs visuales de un grupo con los valores del estado
@@ -295,6 +810,9 @@ function agregarEventListeners(card, grupoId) {
             // Actualizar los inputs visuales
             actualizarInputsGrupo(grupoId);
             
+            // Actualizar colores de los ranges
+            actualizarColoresRangeGrupo(grupoId);
+            
             // Actualizar labels y resultados
             actualizarLabelsGrupo(grupoId);
             calcularYActualizarResultados();
@@ -308,6 +826,7 @@ function agregarEventListeners(card, grupoId) {
             const valor = parseInt(e.target.value);
             estadoGrupos[grupoId].frentes[frenteId] = valor;
             deseleccionarEscenario(grupoId);
+            actualizarColorRangeInput(e.target);
             actualizarLabelsGrupo(grupoId);
             calcularYActualizarResultados();
         });
@@ -319,6 +838,7 @@ function agregarEventListeners(card, grupoId) {
             const valor = parseInt(e.target.value);
             estadoGrupos[grupoId].votosBlancos = valor;
             deseleccionarEscenario(grupoId);
+            actualizarColorRangeInput(e.target);
             actualizarLabelsGrupo(grupoId);
             calcularYActualizarResultados();
         });
@@ -356,15 +876,27 @@ function calcularResultadosGrupo(grupo) {
     // Calcular votos nulos
     const nulos = Math.round(asistentes * estado.votosNulos / 100);
     
-    // Votos válidos (sin nulos)
-    const votosValidos = asistentes - nulos;
+    // Calcular base para votos válidos
+    let baseCalculo = asistentes - nulos;
     
-    // Calcular suma de proporciones (frentes + blancos)
+    // Calcular suma de proporciones
     let sumaProporcion = 0;
     Object.values(estado.frentes).forEach(valor => {
         sumaProporcion += valor;
     });
-    sumaProporcion += estado.votosBlancos;
+    
+    // Si los blancos NO se cuentan como válidos, se calculan sobre asistentes
+    let blancos = 0;
+    let votosValidosParaFrentes = baseCalculo;
+    
+    if (!incluirBlancosComoValidos) {
+        // Los blancos se calculan sobre asistentes (como los nulos)
+        blancos = Math.round(asistentes * estado.votosBlancos / 100);
+        votosValidosParaFrentes = asistentes - nulos - blancos;
+    } else {
+        // Los blancos se incluyen en la proporción con los frentes
+        sumaProporcion += estado.votosBlancos;
+    }
     
     // Calcular votos por frente
     const resultados = {
@@ -372,19 +904,29 @@ function calcularResultadosGrupo(grupo) {
         blancos: 0,
         nulos: nulos,
         asistentes: asistentes,
-        votosValidos: votosValidos
+        votosValidos: incluirBlancosComoValidos ? baseCalculo : votosValidosParaFrentes
     };
+    
+    // Inicializar frentes en 0
+    configEleccion.eleccion.frentes.forEach(frente => {
+        resultados.frentes[frente.id] = 0;
+    });
     
     if (sumaProporcion > 0) {
         // Calcular votos para cada frente
         configEleccion.eleccion.frentes.forEach(frente => {
             const proporcion = estado.frentes[frente.id];
-            const votos = Math.round(votosValidos * proporcion / sumaProporcion);
+            const base = incluirBlancosComoValidos ? baseCalculo : votosValidosParaFrentes;
+            const votos = Math.round(base * proporcion / sumaProporcion);
             resultados.frentes[frente.id] = votos;
         });
         
         // Calcular votos blancos
-        resultados.blancos = Math.round(votosValidos * estado.votosBlancos / sumaProporcion);
+        if (incluirBlancosComoValidos) {
+            resultados.blancos = Math.round(baseCalculo * estado.votosBlancos / sumaProporcion);
+        } else {
+            resultados.blancos = blancos;
+        }
     }
     
     return resultados;
@@ -408,17 +950,35 @@ function calcularResultadosGlobales() {
     
     // Sumar resultados de todos los grupos
     configGrupos.grupos.forEach(grupo => {
-        const resultadoGrupo = calcularResultadosGrupo(grupo);
-        
-        resultadosGlobales.totalElectores += grupo.electores;
-        resultadosGlobales.asistentes += resultadoGrupo.asistentes;
-        resultadosGlobales.nulos += resultadoGrupo.nulos;
-        resultadosGlobales.votosValidos += resultadoGrupo.votosValidos;
-        resultadosGlobales.blancos += resultadoGrupo.blancos;
-        
-        configEleccion.eleccion.frentes.forEach(frente => {
-            resultadosGlobales.frentes[frente.id] += resultadoGrupo.frentes[frente.id];
-        });
+        // Verificar si el grupo tiene datos reales
+        if (gruposConDatosReales.has(grupo.id)) {
+            // Usar datos reales del servidor
+            const datosGrupo = datosServidor.grupos_con_datos.find(g => g.id === grupo.id);
+            if (datosGrupo) {
+                resultadosGlobales.totalElectores += datosGrupo.electores;
+                resultadosGlobales.asistentes += datosGrupo.asistentes;
+                resultadosGlobales.nulos += datosGrupo.nulos;
+                resultadosGlobales.votosValidos += datosGrupo.votosValidos;
+                resultadosGlobales.blancos += datosGrupo.blancos;
+                
+                configEleccion.eleccion.frentes.forEach(frente => {
+                    resultadosGlobales.frentes[frente.id] += (datosGrupo.frentes[frente.id] || 0);
+                });
+            }
+        } else {
+            // Usar simulación del usuario
+            const resultadoGrupo = calcularResultadosGrupo(grupo);
+            
+            resultadosGlobales.totalElectores += grupo.electores;
+            resultadosGlobales.asistentes += resultadoGrupo.asistentes;
+            resultadosGlobales.nulos += resultadoGrupo.nulos;
+            resultadosGlobales.votosValidos += resultadoGrupo.votosValidos;
+            resultadosGlobales.blancos += resultadoGrupo.blancos;
+            
+            configEleccion.eleccion.frentes.forEach(frente => {
+                resultadosGlobales.frentes[frente.id] += (resultadoGrupo.frentes[frente.id] || 0);
+            });
+        }
     });
     
     return resultadosGlobales;
@@ -437,7 +997,7 @@ function calcularYActualizarResultados() {
         : 0;
     document.getElementById('participacion-global').textContent = `${participacion}%`;
     
-    // Crear array de resultados para ordenar
+    // Crear array de resultados para ordenar (solo frentes)
     const resultadosArray = [];
     
     configEleccion.eleccion.frentes.forEach(frente => {
@@ -451,25 +1011,59 @@ function calcularYActualizarResultados() {
             nombre: frente.nombre,
             color: frente.color,
             votos: votos,
-            porcentaje: parseFloat(porcentaje)
+            porcentaje: parseFloat(porcentaje),
+            esBarra: true
         });
     });
     
-    // Agregar votos blancos
-    const porcentajeBlancos = resultadosGlobales.votosValidos > 0 
-        ? (resultadosGlobales.blancos / resultadosGlobales.votosValidos * 100).toFixed(2)
-        : 0;
+    // Calcular porcentaje de blancos
+    let porcentajeBlancos;
+    if (incluirBlancosComoValidos) {
+        // Si se cuentan como válidos, porcentaje sobre votos válidos
+        porcentajeBlancos = resultadosGlobales.votosValidos > 0 
+            ? (resultadosGlobales.blancos / resultadosGlobales.votosValidos * 100).toFixed(2)
+            : 0;
+    } else {
+        // Si NO se cuentan como válidos, porcentaje sobre asistentes
+        porcentajeBlancos = resultadosGlobales.asistentes > 0 
+            ? (resultadosGlobales.blancos / resultadosGlobales.asistentes * 100).toFixed(2)
+            : 0;
+    }
     
+    // Agregar votos blancos
     resultadosArray.push({
         id: 'blancos',
         nombre: 'Votos Blancos',
         color: '#95a5a6',
         votos: resultadosGlobales.blancos,
-        porcentaje: parseFloat(porcentajeBlancos)
+        porcentaje: parseFloat(porcentajeBlancos),
+        esBarra: incluirBlancosComoValidos, // Solo mostrar barra si se cuentan como válidos
+        orden: incluirBlancosComoValidos ? 0 : 2 // 0 = con barra, 2 = último sin barra
     });
     
-    // Ordenar por porcentaje descendente
-    resultadosArray.sort((a, b) => b.porcentaje - a.porcentaje);
+    // Agregar votos nulos (siempre sin barra, siempre al final)
+    const porcentajeNulos = resultadosGlobales.asistentes > 0 
+        ? (resultadosGlobales.nulos / resultadosGlobales.asistentes * 100).toFixed(2)
+        : 0;
+    
+    resultadosArray.push({
+        id: 'nulos',
+        nombre: 'Votos Nulos',
+        color: '#7f8c8d',
+        votos: resultadosGlobales.nulos,
+        porcentaje: parseFloat(porcentajeNulos),
+        esBarra: false, // Nunca mostrar barra
+        orden: 3 // Siempre al final
+    });
+    
+    // Ordenar: primero los que tienen barra (por porcentaje), luego blancos sin barra, luego nulos
+    resultadosArray.sort((a, b) => {
+        const ordenA = a.orden !== undefined ? a.orden : 0;
+        const ordenB = b.orden !== undefined ? b.orden : 0;
+        
+        if (ordenA !== ordenB) return ordenA - ordenB;
+        return b.porcentaje - a.porcentaje;
+    });
     
     // Renderizar gráfico de barras
     renderizarGraficoBarras(resultadosArray);
@@ -481,16 +1075,72 @@ function calcularYActualizarResultados() {
 // Renderizar gráfico de barras
 function renderizarGraficoBarras(resultados) {
     const contenedor = document.getElementById('grafico-resultados');
-    contenedor.innerHTML = '';
+    const barrasExistentes = contenedor.querySelectorAll('.barra-contenedor');
     
-    resultados.forEach(resultado => {
-        const barraDiv = document.createElement('div');
-        barraDiv.className = 'barra-contenedor';
-        
+    let necesitaReconstruir = false;
+    
+    // Verificar si el número de barras cambió
+    if (barrasExistentes.length !== resultados.length) {
+        necesitaReconstruir = true;
+    } else {
+        // Verificar si alguna barra cambió de ID (orden diferente) o de tipo
+        for (let i = 0; i < resultados.length; i++) {
+            const barraExistente = barrasExistentes[i];
+            const idExistente = barraExistente.dataset.resultadoId;
+            const idNuevo = resultados[i].id;
+            const tieneBarraProgreso = barraExistente.querySelector('.barra-progreso') !== null;
+            const deberaTenerBarra = resultados[i].esBarra !== false;
+            
+            // Si cambió el ID (diferente frente en esta posición) o el tipo de barra, reconstruir
+            if (idExistente !== idNuevo || tieneBarraProgreso !== deberaTenerBarra) {
+                necesitaReconstruir = true;
+                break;
+            }
+        }
+    }
+    
+    if (necesitaReconstruir) {
+        // Recrear todo
+        contenedor.innerHTML = '';
+        resultados.forEach(resultado => {
+            const barraDiv = crearBarraHTML(resultado);
+            contenedor.appendChild(barraDiv);
+        });
+    } else {
+        // Actualizar barras existentes (solo valores numéricos, el orden no cambió)
+        resultados.forEach((resultado, index) => {
+            const barraDiv = barrasExistentes[index];
+            actualizarBarraExistente(barraDiv, resultado);
+        });
+    }
+}
+
+// Función auxiliar para crear una barra nueva
+function crearBarraHTML(resultado) {
+    const barraDiv = document.createElement('div');
+    barraDiv.className = 'barra-contenedor';
+    barraDiv.dataset.resultadoId = resultado.id;
+    
+    // Si esBarra es false, mostrar solo información sin barra de progreso
+    if (resultado.esBarra === false) {
         barraDiv.innerHTML = `
             <div class="barra-info">
                 <span class="frente-nombre">
-                    <span class="color-indicator" style="background-color: ${resultado.color}"></span>
+                    ${obtenerIndicadorVisual(resultado)}
+                    ${resultado.nombre}
+                </span>
+                <span>
+                    <span class="frente-porcentaje">${resultado.porcentaje.toFixed(2)}%</span>
+                    <span class="frente-votos">(${formatearNumero(resultado.votos)} votos)</span>
+                </span>
+            </div>
+        `;
+    } else {
+        // Mostrar con barra de progreso
+        barraDiv.innerHTML = `
+            <div class="barra-info">
+                <span class="frente-nombre">
+                    ${obtenerIndicadorVisual(resultado)}
                     ${resultado.nombre}
                 </span>
                 <span>
@@ -504,39 +1154,268 @@ function renderizarGraficoBarras(resultados) {
                 </div>
             </div>
         `;
-        
-        contenedor.appendChild(barraDiv);
-    });
+    }
+    
+    return barraDiv;
 }
+
+// Función auxiliar para actualizar una barra existente
+function actualizarBarraExistente(barraDiv, resultado) {
+    const porcentajeSpan = barraDiv.querySelector('.frente-porcentaje');
+    const votosSpan = barraDiv.querySelector('.frente-votos');
+    const barraFill = barraDiv.querySelector('.barra-fill');
+    
+    if (porcentajeSpan) {
+        porcentajeSpan.textContent = `${resultado.porcentaje.toFixed(2)}%`;
+    }
+    if (votosSpan) {
+        votosSpan.textContent = `(${formatearNumero(resultado.votos)} votos)`;
+    }
+    if (barraFill) {
+        barraFill.style.width = `${resultado.porcentaje}%`;
+    }
+}
+
 
 // Actualizar resultados de cada grupo individual
 function actualizarResultadosGrupos() {
     configGrupos.grupos.forEach(grupo => {
+        // Solo actualizar grupos de simulación (no los que tienen datos reales)
+        if (gruposConDatosReales.has(grupo.id)) {
+            return; // Saltar grupos con datos reales
+        }
+        
         const resultados = calcularResultadosGrupo(grupo);
         const contenedor = document.getElementById(`resultados-${grupo.id}`);
         
-        let html = '<h4 style="margin-bottom: 10px; font-size: 0.95em;">Resultados:</h4>';
+        // Verificar que el contenedor existe
+        if (!contenedor) {
+            return;
+        }
         
-        html += `
-            <div class="resultado-item">
-                <span class="resultado-label">Asistentes:</span>
-                <span class="resultado-value">${formatearNumero(resultados.asistentes)}</span>
-            </div>
-            <div class="resultado-item">
-                <span class="resultado-label">Votos Nulos:</span>
-                <span class="resultado-value">${formatearNumero(resultados.nulos)}</span>
-            </div>
-            <div class="resultado-item">
-                <span class="resultado-label">Votos Válidos:</span>
-                <span class="resultado-value">${formatearNumero(resultados.votosValidos)}</span>
-            </div>
-        `;
+        // Verificar si ya existe la estructura
+        let datosAdicionales = contenedor.querySelector('.datos-adicionales');
         
-        contenedor.innerHTML = html;
+        if (!datosAdicionales) {
+            // Primera vez: crear la estructura
+            let html = `
+                <div class="datos-adicionales">
+                    <div class="dato-item">
+                        <span class="dato-label">Asistentes:</span>
+                        <span class="dato-value">${formatearNumero(resultados.asistentes)}</span>
+                    </div>
+                    <div class="dato-item">
+                        <span class="dato-label">Votos Válidos:</span>
+                        <span class="dato-value">${formatearNumero(resultados.votosValidos)}</span>
+                    </div>
+                </div>
+            `;
+            contenedor.innerHTML = html;
+        } else {
+            // Actualizar solo los valores existentes
+            const datoValues = datosAdicionales.querySelectorAll('.dato-value');
+            if (datoValues[0]) datoValues[0].textContent = formatearNumero(resultados.asistentes);
+            if (datoValues[1]) datoValues[1].textContent = formatearNumero(resultados.votosValidos);
+        }
     });
 }
 
 // Formatear número con separadores de miles
 function formatearNumero(numero) {
     return numero.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+}
+
+// Inicializar controles generales
+function inicializarControlesGenerales() {
+    // Switch de incluir blancos
+    const switchBlancos = document.getElementById('incluir-blancos');
+    switchBlancos.addEventListener('change', (e) => {
+        incluirBlancosComoValidos = e.target.checked;
+        
+        // Actualizar tarjetas de datos reales
+        configGrupos.grupos.forEach(grupo => {
+            if (gruposConDatosReales.has(grupo.id)) {
+                actualizarTarjetaGrupo(grupo);
+            } else {
+                // Para grupos de simulación, actualizar colores de ranges
+                actualizarColoresRangeGrupo(grupo.id);
+            }
+        });
+        
+        // Actualizar resultados globales y de simulación
+        calcularYActualizarResultados();
+    });
+
+    // Botones para abrir modales
+    document.getElementById('btn-asistencia-masiva').addEventListener('click', () => {
+        abrirModal('modal-asistencia');
+    });
+
+    document.getElementById('btn-nulos-masivos').addEventListener('click', () => {
+        abrirModal('modal-nulos');
+    });
+
+    // Botones para aplicar cambios
+    document.getElementById('btn-aplicar-asistencia').addEventListener('click', () => {
+        aplicarAsistenciaGlobal();
+    });
+
+    document.getElementById('btn-aplicar-nulos').addEventListener('click', () => {
+        aplicarNulosGlobal();
+    });
+
+    // Cerrar modales
+    document.querySelectorAll('.close, .btn-modal-cancel').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const modalId = e.target.dataset.modal;
+            cerrarModal(modalId);
+        });
+    });
+
+    // Cerrar modal al hacer clic fuera
+    window.addEventListener('click', (e) => {
+        if (e.target.classList.contains('modal')) {
+            e.target.style.display = 'none';
+        }
+    });
+}
+
+// Calcular promedio de asistencia de datos reales
+function calcularPromedioAsistencia() {
+    if (!datosServidor || !datosServidor.grupos_con_datos || datosServidor.grupos_con_datos.length === 0) {
+        return null;
+    }
+    
+    let sumaAsistencia = 0;
+    datosServidor.grupos_con_datos.forEach(grupo => {
+        const porcentaje = grupo.electores > 0 ? (grupo.asistentes / grupo.electores * 100) : 0;
+        sumaAsistencia += porcentaje;
+    });
+    
+    return sumaAsistencia / datosServidor.grupos_con_datos.length;
+}
+
+// Calcular promedio de votos nulos de datos reales
+function calcularPromedioNulos() {
+    if (!datosServidor || !datosServidor.grupos_con_datos || datosServidor.grupos_con_datos.length === 0) {
+        return null;
+    }
+    
+    let sumaNulos = 0;
+    datosServidor.grupos_con_datos.forEach(grupo => {
+        const porcentaje = grupo.asistentes > 0 ? (grupo.nulos / grupo.asistentes * 100) : 0;
+        sumaNulos += porcentaje;
+    });
+    
+    return sumaNulos / datosServidor.grupos_con_datos.length;
+}
+
+// Configurar botones de promedio en modales
+function configurarBotonesPromedio() {
+    const btnPromedioAsistencia = document.getElementById('btn-promedio-asistencia');
+    const btnPromedioNulos = document.getElementById('btn-promedio-nulos');
+    
+    const hayDatosReales = datosServidor && datosServidor.grupos_con_datos && datosServidor.grupos_con_datos.length > 0;
+    
+    // Configurar botón de asistencia
+    if (hayDatosReales) {
+        btnPromedioAsistencia.disabled = false;
+        btnPromedioAsistencia.addEventListener('click', () => {
+            const promedio = calcularPromedioAsistencia();
+            if (promedio !== null) {
+                document.getElementById('input-asistencia-global').value = promedio.toFixed(1);
+            }
+        });
+    } else {
+        btnPromedioAsistencia.disabled = true;
+    }
+    
+    // Configurar botón de nulos
+    if (hayDatosReales) {
+        btnPromedioNulos.disabled = false;
+        btnPromedioNulos.addEventListener('click', () => {
+            const promedio = calcularPromedioNulos();
+            if (promedio !== null) {
+                document.getElementById('input-nulos-global').value = promedio.toFixed(1);
+            }
+        });
+    } else {
+        btnPromedioNulos.disabled = true;
+    }
+}
+
+// Abrir modal
+function abrirModal(modalId) {
+    document.getElementById(modalId).style.display = 'block';
+}
+
+// Cerrar modal
+function cerrarModal(modalId) {
+    document.getElementById(modalId).style.display = 'none';
+}
+
+// Aplicar asistencia global a todos los grupos
+function aplicarAsistenciaGlobal() {
+    const valor = parseFloat(document.getElementById('input-asistencia-global').value);
+    
+    if (valor < 0 || valor > 100) {
+        alert('El valor debe estar entre 0 y 100');
+        return;
+    }
+
+    configGrupos.grupos.forEach(grupo => {
+        // Solo aplicar a grupos de simulación (no a grupos con datos reales)
+        if (!gruposConDatosReales.has(grupo.id)) {
+            estadoGrupos[grupo.id].asistencia = valor;
+            
+            // Actualizar el input visual
+            const card = document.getElementById(`grupo-${grupo.id}`);
+            if (card) {
+                const inputAsistencia = card.querySelector('.range-asistencia');
+                if (inputAsistencia) {
+                    inputAsistencia.value = valor;
+                }
+                const valorLabel = document.getElementById(`valor-${grupo.id}-asistencia`);
+                if (valorLabel) {
+                    valorLabel.textContent = `${valor.toFixed(1)}%`;
+                }
+            }
+        }
+    });
+
+    calcularYActualizarResultados();
+    cerrarModal('modal-asistencia');
+}
+
+// Aplicar votos nulos global a todos los grupos
+function aplicarNulosGlobal() {
+    const valor = parseFloat(document.getElementById('input-nulos-global').value);
+    
+    if (valor < 0 || valor > 100) {
+        alert('El valor debe estar entre 0 y 100');
+        return;
+    }
+
+    configGrupos.grupos.forEach(grupo => {
+        // Solo aplicar a grupos de simulación (no a grupos con datos reales)
+        if (!gruposConDatosReales.has(grupo.id)) {
+            estadoGrupos[grupo.id].votosNulos = valor;
+            
+            // Actualizar el input visual
+            const card = document.getElementById(`grupo-${grupo.id}`);
+            if (card) {
+                const inputNulos = card.querySelector('.range-nulos');
+                if (inputNulos) {
+                    inputNulos.value = valor;
+                }
+                const valorLabel = document.getElementById(`valor-${grupo.id}-nulos`);
+                if (valorLabel) {
+                    valorLabel.textContent = `${valor.toFixed(1)}%`;
+                }
+            }
+        }
+    });
+
+    calcularYActualizarResultados();
+    cerrarModal('modal-nulos');
 }

@@ -10,7 +10,7 @@
     <div class="container">
         <header>
             <h1>🗳️ EspeculApp</h1>
-            <p class="subtitle">Simulador de Escenarios Electorales</p>
+            <p class="subtitle">Simulador de Escenarios Electorales de Ciudad Futura</p>
             <div id="eleccion-info"></div>
         </header>
 
@@ -35,6 +35,30 @@
                 </div>
             </section>
 
+            <!-- Sección de Controles Generales -->
+            <section class="controles-generales">
+                <h2>🎛️ Controles Generales</h2>
+                <div class="controles-generales-contenido">
+                    <div class="control-switch-container">
+                        <label class="switch-label">
+                            <span class="switch-text">Incluir votos blancos como válidos</span>
+                            <label class="switch">
+                                <input type="checkbox" id="incluir-blancos" checked>
+                                <span class="slider"></span>
+                            </label>
+                        </label>
+                    </div>
+                    <div class="controles-masivos">
+                        <button class="btn-control-masivo" id="btn-asistencia-masiva">
+                            📊 Configurar Asistencia Global
+                        </button>
+                        <button class="btn-control-masivo" id="btn-nulos-masivos">
+                            ❌ Configurar Votos Nulos Globales
+                        </button>
+                    </div>
+                </div>
+            </section>
+
             <!-- Sección de Grupos -->
             <section class="grupos-container">
                 <h2>⚙️ Configurar Grupos Electorales</h2>
@@ -43,8 +67,48 @@
         </main>
 
         <footer>
-            <p>EspeculApp © 2025 - Simulador Electoral</p>
+            <p>EspeculApp © 2025 - Simulador Electoral de Ciudad Futura</p>
         </footer>
+    </div>
+
+    <!-- Modal para Asistencia Masiva -->
+    <div id="modal-asistencia" class="modal">
+        <div class="modal-content">
+            <span class="close" data-modal="modal-asistencia">&times;</span>
+            <h3>Configurar Asistencia Global</h3>
+            <p>Establece el porcentaje de asistencia para todos los grupos:</p>
+            <div class="modal-input-group">
+                <label for="input-asistencia-global">Asistencia (%):</label>
+                <input type="number" id="input-asistencia-global" min="0" max="100" step="0.1" value="75">
+                <button class="btn-usar-promedio" id="btn-promedio-asistencia" title="Usar promedio de datos reales">
+                    📊 Usar promedio de datos reales
+                </button>
+            </div>
+            <div class="modal-buttons">
+                <button class="btn-modal-cancel" data-modal="modal-asistencia">Cancelar</button>
+                <button class="btn-modal-apply" id="btn-aplicar-asistencia">Aplicar a Todos</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para Votos Nulos Masivos -->
+    <div id="modal-nulos" class="modal">
+        <div class="modal-content">
+            <span class="close" data-modal="modal-nulos">&times;</span>
+            <h3>Configurar Votos Nulos Globales</h3>
+            <p>Establece el porcentaje de votos nulos para todos los grupos:</p>
+            <div class="modal-input-group">
+                <label for="input-nulos-global">Votos Nulos (%):</label>
+                <input type="number" id="input-nulos-global" min="0" max="100" step="0.1" value="2">
+                <button class="btn-usar-promedio" id="btn-promedio-nulos" title="Usar promedio de datos reales">
+                    📊 Usar promedio de datos reales
+                </button>
+            </div>
+            <div class="modal-buttons">
+                <button class="btn-modal-cancel" data-modal="modal-nulos">Cancelar</button>
+                <button class="btn-modal-apply" id="btn-aplicar-nulos">Aplicar a Todos</button>
+            </div>
+        </div>
     </div>
 
     <script src="app.js"></script>
