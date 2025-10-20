@@ -1849,6 +1849,33 @@ function obtenerNombreCargoSingular(frenteId) {
     return sumaNulos / datosServidor.grupos_con_datos.length;
 }
 
+// Configurar sincronización de inputs numéricos y range en modales globales
+    function configurarSincronizacionInputsGlobales() {
+    // Sincronización para Asistencia Global
+    const inputAsistenciaNumber = document.getElementById('input-asistencia-global');
+    const inputAsistenciaRange = document.getElementById('range-asistencia-global');
+    
+    inputAsistenciaNumber.addEventListener('input', (e) => {
+        inputAsistenciaRange.value = e.target.value;
+    });
+    
+    inputAsistenciaRange.addEventListener('input', (e) => {
+        inputAsistenciaNumber.value = e.target.value;
+    });
+    
+    // Sincronización para Votos Nulos Globales
+    const inputNulosNumber = document.getElementById('input-nulos-global');
+    const inputNulosRange = document.getElementById('range-nulos-global');
+    
+    inputNulosNumber.addEventListener('input', (e) => {
+        inputNulosRange.value = e.target.value;
+    });
+    
+    inputNulosRange.addEventListener('input', (e) => {
+        inputNulosNumber.value = e.target.value;
+    });
+}
+
 // Configurar botones de promedio en modales
     function configurarBotonesPromedio() {
     const btnPromedioAsistencia = document.getElementById('btn-promedio-asistencia');
@@ -1862,7 +1889,9 @@ function obtenerNombreCargoSingular(frenteId) {
         btnPromedioAsistencia.addEventListener('click', () => {
             const promedio = calcularPromedioAsistencia();
             if (promedio !== null) {
-                document.getElementById('input-asistencia-global').value = promedio.toFixed(1);
+                const valorPromedio = promedio.toFixed(1);
+                document.getElementById('input-asistencia-global').value = valorPromedio;
+                document.getElementById('range-asistencia-global').value = valorPromedio;
             }
         });
     } else {
@@ -1875,7 +1904,9 @@ function obtenerNombreCargoSingular(frenteId) {
         btnPromedioNulos.addEventListener('click', () => {
             const promedio = calcularPromedioNulos();
             if (promedio !== null) {
-                document.getElementById('input-nulos-global').value = promedio.toFixed(1);
+                const valorPromedio = promedio.toFixed(1);
+                document.getElementById('input-nulos-global').value = valorPromedio;
+                document.getElementById('range-nulos-global').value = valorPromedio;
             }
         });
     } else {
@@ -1991,6 +2022,7 @@ function obtenerNombreCargoSingular(frenteId) {
             inicializarControlesGenerales();
             sincronizarSwitchBlancos(); // Sincronizar el switch con el estado cargado
             configurarBotonesPromedio(); // Configurar botones de promedio en modales
+            configurarSincronizacionInputsGlobales(); // Sincronizar inputs numéricos y range en modales
             inicializarPolleo(); // Iniciar polling automático
             inicializarDeteccionVisibilidad(); // Detectar cuando el usuario vuelve a la app
             calcularYActualizarResultados();

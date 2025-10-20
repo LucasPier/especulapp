@@ -796,6 +796,12 @@ input:checked + .slider:before {
     transition: border-color 0.3s;
 }
 
+.modal-input-group input[type="range"] {
+    padding: 0;
+    margin-top: 10px;
+    cursor: pointer;
+}
+
 .modal-input-group input:focus {
     outline: none;
     border-color: var(--accent-color);
