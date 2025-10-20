@@ -288,7 +288,6 @@ const EspeculApp = (function() {
             eleccionInfoDesktop.textContent = infoEleccion;
         }
     } catch (error) {
-        console.error('Error al cargar configuraciones:', error);
         await alerta('Error al cargar las configuraciones. Verifica que los archivos JSON existan.', '❌ Error de Carga');
     }
 }
@@ -308,9 +307,6 @@ const EspeculApp = (function() {
             });
         }
         
-        // console.log('Datos del servidor cargados:', datosServidor);
-        // console.log('Grupos con datos reales:', Array.from(gruposConDatosReales));
-        
         // Actualizar UI solo si ya está inicializada (no en la primera carga)
         if (configGrupos && Object.keys(estadoGrupos).length > 0) {
             renderizarUI();
@@ -318,7 +314,6 @@ const EspeculApp = (function() {
             configurarBotonesPromedio(); // Actualizar estado de botones de promedio
         }
     } catch (error) {
-        console.error('Error al cargar datos del servidor:', error);
         // No mostrar alerta, puede ser que aún no haya datos disponibles
     }
 }
@@ -333,7 +328,6 @@ const EspeculApp = (function() {
     // Consultar cada 60 segundos (solo si la página está visible)
     intervaloPolleoId = setInterval(async () => {
         if (!document.hidden) {
-            // console.log('Actualizando datos del servidor...');
             await cargarDatosServidor();
         }
     }, 60000); // 60 segundos
@@ -349,7 +343,6 @@ const EspeculApp = (function() {
             
             // Si pasó más de 1 minuto, actualizar
             if (tiempoTranscurrido > 60) {
-                // console.log('Usuario volvió a la app, actualizando datos...');
                 await cargarDatosServidor();
             }
         }
@@ -396,14 +389,13 @@ const EspeculApp = (function() {
                     estadoGrupos[grupoId] = estadoParsed[grupoId];
                 }
             });
-            console.log('Estado cargado desde LocalStorage');
         }
         
         if (switchGuardado !== null) {
             incluirBlancosComoValidos = switchGuardado === 'true';
         }
     } catch (error) {
-        console.error('Error al cargar estado desde LocalStorage:', error);
+        // Error silencioso al cargar desde localStorage
     }
 }
 
@@ -429,7 +421,7 @@ const EspeculApp = (function() {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(estadoParaGuardar));
         localStorage.setItem(STORAGE_SWITCH_KEY, incluirBlancosComoValidos.toString());
     } catch (error) {
-        console.error('Error al guardar estado en LocalStorage:', error);
+        // Error silencioso al guardar en localStorage
     }
 }
 
@@ -506,14 +498,14 @@ const EspeculApp = (function() {
     
     calcularYActualizarResultados();
     
-    await alerta('✅ Configuración reseteada correctamente', 'Operación Exitosa');
+    // await alerta('✅ Configuración reseteada correctamente', 'Operación Exitosa');
     
     } catch (error) {
         // Usuario canceló la operación
         if (error && error.cancelado) {
-            console.log('Reseteo cancelado por el usuario');
+            // Cancelación silenciosa
         } else {
-            console.error('Error al resetear configuración:', error);
+            // Error inesperado durante el reseteo
         }
     }
 }
@@ -1093,6 +1085,13 @@ const EspeculApp = (function() {
     function actualizarLabelsGrupo(grupoId) {
     const porcentajes = calcularPorcentajesNormalizados(grupoId);
     const resultados = calcularResultadosGrupo(configGrupos.grupos.find(g => g.id === grupoId));
+    const estado = estadoGrupos[grupoId];
+    
+    // Actualizar label de asistencia
+    const elementoAsistencia = document.getElementById(`valor-${grupoId}-asistencia`);
+    if (elementoAsistencia) {
+        elementoAsistencia.textContent = `${formatearPorcentaje(estado.asistencia, 1)}%`;
+    }
     
     // Actualizar labels de frentes con el mismo formato que datos reales
     configEleccion.eleccion.frentes.forEach(frente => {
@@ -1115,9 +1114,7 @@ const EspeculApp = (function() {
     // Actualizar label de nulos con el mismo formato (solo para grupos de simulación)
     const elementoNulos = document.getElementById(`valor-${grupoId}-nulos`);
     if (elementoNulos && resultados.asistentes !== undefined) {
-        const porcentajeNulos = resultados.asistentes > 0 
-            ? formatearPorcentaje(resultados.nulos / resultados.asistentes * 100)
-            : '0,00';
+        const porcentajeNulos = formatearPorcentaje(estado.votosNulos, 1);
         const votosNulos = resultados.nulos;
         elementoNulos.innerHTML = `<span style="font-weight: 700; color: var(--primary-color);">${porcentajeNulos}%</span> <span style="color: var(--text-secondary); font-size: 0.85em;">(${formatearNumero(votosNulos)})</span>`;
     }
@@ -1252,7 +1249,7 @@ const EspeculApp = (function() {
         input.addEventListener('input', (e) => {
             let valor = parseFloat(e.target.value);
             estadoGrupos[grupoId].asistencia = valor;
-            document.getElementById(`valor-${grupoId}-asistencia`).textContent = `${formatearPorcentaje(valor, 1)}%`;
+            actualizarLabelsGrupo(grupoId);
             calcularYActualizarResultados();
             guardarEstadoEnLocalStorage();
         });
@@ -1263,7 +1260,7 @@ const EspeculApp = (function() {
         input.addEventListener('input', (e) => {
             let valor = parseFloat(e.target.value);
             estadoGrupos[grupoId].votosNulos = valor;
-            document.getElementById(`valor-${grupoId}-nulos`).textContent = `${formatearPorcentaje(valor, 1)}%`;
+            actualizarLabelsGrupo(grupoId);
             calcularYActualizarResultados();
             guardarEstadoEnLocalStorage();
         });
@@ -1335,6 +1332,41 @@ const EspeculApp = (function() {
     }
     
     return resultados;
+}
+
+/**
+ * Calcula la distribución de cargos según el sistema D'Hondt
+ * @param {number[]} votos - Array con la cantidad de votos de cada lista
+ * @param {number} cantidadCargos - Total de cargos a repartir
+ * @returns {number[][]} Array de arrays con los números de cargos asignados a cada lista
+ */
+    function calcularDHondt(votos, cantidadCargos) {
+    const cargos = [];
+    const nuevoCargo = () => {
+        let imax = -1, max = -1;
+        for (let indexLista = 0; indexLista < votos.length; indexLista++) {
+            const cociente = votos[indexLista] / (cargos[indexLista].length + 1);
+            if (cociente > max) {
+                max = cociente;
+                imax = indexLista;
+            }
+        }
+        return imax;
+    };
+    
+    // Un array de cargos por cada lista
+    for (let indexLista = 0; indexLista < votos.length; indexLista++) {
+        cargos[indexLista] = [];
+    }
+    
+    // Asignamos los cargos
+    for (let indexCargo = 0; indexCargo < cantidadCargos; indexCargo++) {
+        const index = nuevoCargo();
+        if (index === -1) break;
+        cargos[index].push(indexCargo + 1);
+    }
+    
+    return cargos;
 }
 
 // Calcular resultados globales
@@ -1461,6 +1493,33 @@ const EspeculApp = (function() {
         orden: 3 // Siempre al final
     });
     
+    // Calcular distribución de cargos si es elección legislativa
+    if (configEleccion.eleccion.esLegislativa && configEleccion.eleccion.cantidadCargos > 0) {
+        
+        // Extraer solo los votos de los frentes (sin blancos ni nulos)
+        const votosParaDHondt = [];
+        const indicesFrentes = []; // Para mapear resultados de D'Hondt con frentes
+        
+        configEleccion.eleccion.frentes.forEach(frente => {
+            votosParaDHondt.push(resultadosGlobales.frentes[frente.id]);
+            indicesFrentes.push(frente.id);
+        });
+        
+        // Calcular distribución de cargos
+        const distribucionCargos = calcularDHondt(votosParaDHondt, configEleccion.eleccion.cantidadCargos);
+        
+        // Asignar cargos a cada frente en resultadosArray
+        resultadosArray.forEach(resultado => {
+            // Solo para frentes reales (no blancos ni nulos)
+            if (resultado.esBarra === true && resultado.id !== 'blancos' && resultado.id !== 'nulos') {
+                const indice = indicesFrentes.indexOf(resultado.id);
+                if (indice !== -1) {
+                    resultado.cargos = distribucionCargos[indice].length;
+                }
+            }
+        });
+    }
+    
     // Ordenar: primero los que tienen barra (por porcentaje), luego blancos sin barra, luego nulos
     resultadosArray.sort((a, b) => {
         const ordenA = a.orden !== undefined ? a.orden : 0;
@@ -1541,6 +1600,17 @@ const EspeculApp = (function() {
             </div>
         `;
     } else {
+        // Generar texto de cargos si corresponde
+        let textoCargos = '';
+        
+        if (resultado.cargos !== undefined && resultado.cargos > 0 && 
+            configEleccion.eleccion.esLegislativa) {
+            const nombreCargo = resultado.cargos === 1 
+                ? obtenerNombreCargoSingular(resultado.id)
+                : configEleccion.eleccion.nombreCargoPlural;
+            textoCargos = `<div class="cargos-obtenidos">${resultado.cargos} ${nombreCargo}</div>`;
+        }
+        
         // Mostrar con barra de progreso
         barraDiv.innerHTML = `
             <div class="barra-info">
@@ -1553,6 +1623,7 @@ const EspeculApp = (function() {
                     <span class="frente-votos">(${formatearNumero(resultado.votos)} votos)</span>
                 </span>
             </div>
+            ${textoCargos}
             <div class="barra-progreso">
                 <div class="barra-fill" 
                      style="width: ${resultado.porcentaje}%; background-color: ${resultado.color}">
@@ -1562,6 +1633,25 @@ const EspeculApp = (function() {
     }
     
     return barraDiv;
+}
+
+/**
+ * Obtiene el nombre del cargo singular según el género del candidato
+ * @param {string} frenteId - ID del frente electoral
+ * @returns {string} - Nombre del cargo en singular con el género apropiado
+ */
+function obtenerNombreCargoSingular(frenteId) {
+    const frente = configEleccion.eleccion.frentes.find(f => f.id === frenteId);
+    
+    if (!frente || !frente.canidate) {
+        // Si no se encuentra el frente o no tiene género, usar masculino como fallback
+        return configEleccion.eleccion.nombreCargoSingularM;
+    }
+    
+    // Retornar según el género del candidato
+    return frente.canidate === 'F' 
+        ? configEleccion.eleccion.nombreCargoSingularF 
+        : configEleccion.eleccion.nombreCargoSingularM;
 }
 
 // Función auxiliar para actualizar una barra existente
@@ -1578,6 +1668,37 @@ const EspeculApp = (function() {
     }
     if (barraFill) {
         barraFill.style.width = `${resultado.porcentaje}%`;
+    }
+    
+    // Actualizar o crear elemento de cargos si es elección legislativa
+    let cargosDiv = barraDiv.querySelector('.cargos-obtenidos');
+    
+    if (resultado.cargos !== undefined && resultado.cargos > 0 && 
+        configEleccion.eleccion.esLegislativa) {
+        const nombreCargo = resultado.cargos === 1 
+            ? obtenerNombreCargoSingular(resultado.id)
+            : configEleccion.eleccion.nombreCargoPlural;
+        const textoCargos = `${resultado.cargos} ${nombreCargo}`;
+        
+        if (cargosDiv) {
+            // Actualizar texto existente
+            cargosDiv.textContent = textoCargos;
+        } else {
+            // Crear elemento nuevo
+            cargosDiv = document.createElement('div');
+            cargosDiv.className = 'cargos-obtenidos';
+            cargosDiv.textContent = textoCargos;
+            // Insertar antes de la barra de progreso
+            const barraProgreso = barraDiv.querySelector('.barra-progreso');
+            if (barraProgreso) {
+                barraDiv.insertBefore(cargosDiv, barraProgreso);
+            }
+        }
+    } else {
+        if (cargosDiv) {
+            // Remover elemento si ya no tiene cargos
+            cargosDiv.remove();
+        }
     }
 }
 
@@ -1770,15 +1891,12 @@ const EspeculApp = (function() {
 // Cerrar modal
     function cerrarModal(modalId) {
     if (!modalId) {
-        console.warn('cerrarModal: No se proporcionó un modalId');
         return;
     }
     
     const modal = document.getElementById(modalId);
     if (modal) {
         modal.style.display = 'none';
-    } else {
-        console.warn(`cerrarModal: No se encontró el elemento con id "${modalId}"`);
     }
 }
 
@@ -1861,7 +1979,6 @@ const EspeculApp = (function() {
      */
     async function init() {
         if (isInitialized) {
-            console.warn('EspeculApp: La aplicación ya está inicializada');
             return;
         }
 
@@ -1879,9 +1996,7 @@ const EspeculApp = (function() {
             calcularYActualizarResultados();
             
             isInitialized = true;
-            console.log('EspeculApp: Aplicación inicializada correctamente');
         } catch (error) {
-            console.error('EspeculApp: Error durante la inicialización', error);
             throw error;
         }
     }
@@ -1892,7 +2007,6 @@ const EspeculApp = (function() {
      */
     function destroy() {
         if (!isInitialized) {
-            console.warn('EspeculApp: La aplicación no está inicializada');
             return;
         }
 
@@ -1906,7 +2020,6 @@ const EspeculApp = (function() {
         document.removeEventListener('visibilitychange', inicializarDeteccionVisibilidad);
 
         isInitialized = false;
-        console.log('EspeculApp: Aplicación destruida correctamente');
     }
 
     /**

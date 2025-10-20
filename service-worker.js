@@ -32,10 +32,10 @@
 // ====================================
 // ⚠️ IMPORTANTE: Incrementa solo la versión del grupo que modificaste
 const CACHE_VERSIONS = {
-    HTML: '1.0.0',
-    CSS: '1.0.0',
-    JS: '1.0.0',
-    JSON: '1.0.0',
+    HTML: '1.0.2',
+    CSS: '1.0.4',
+    JS: '1.0.1',
+    JSON: '1.0.1',
     IMG: '1.0.0'
 };
 

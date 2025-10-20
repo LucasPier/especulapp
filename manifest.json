@@ -2,27 +2,27 @@
   "name": "EspeculApp - Simulador Electoral de Ciudad Futura",
   "short_name": "EspeculApp",
   "description": "Simulador de escenarios electorales con datos en tiempo real para Ciudad Futura, Santa Fe, Argentina",
-  "start_url": "/cf/2023/especulapp/index.html",
-  "scope": "/cf/2023/especulapp/",
+  "start_url": "./index.html",
+  "scope": "./",
   "display": "standalone",
   "background_color": "#0f1419",
   "theme_color": "#669dea",
   "orientation": "any",
   "icons": [
     {
-      "src": "img/icono128.png",
+      "src": "./img/icono128.png",
       "sizes": "128x128",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "img/icono512.png",
+      "src": "./img/icono512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "img/icono.svg",
+      "src": "./img/icono.svg",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any"
@@ -34,10 +34,10 @@
       "name": "Abrir Simulador",
       "short_name": "Simulador",
       "description": "Abrir el simulador electoral directamente",
-      "url": "/cf/2023/especulapp/index.html",
+      "url": "./index.html",
       "icons": [
         {
-          "src": "img/icono128.png",
+          "src": "./img/icono128.png",
           "sizes": "128x128"
         }
       ]

@@ -1,31 +1,40 @@
 {
   "eleccion": {
-    "nombre": "Elecciones Nacionales Santa Fe 2025",
-    "fecha": "26/10/2025",
+    "nombre": "Diputados Nacionales Santa Fe",
+    "fecha": "OCT2025",
+    "esLegislativa": true,
+    "cantidadCargos": 9,
+    "nombreCargoSingularF": "diputada",
+    "nombreCargoSingularM": "diputado",
+    "nombreCargoPlural": "diputados",
     "frentes": [
       {
         "id": "frente_1",
         "nombre": "Fuerza Patria",
         "color": "#4A90E2",
-        "abreviatura": "FP"
+        "abreviatura": "FP",
+        "canidate": "F"
       },
       {
         "id": "frente_2",
         "nombre": "La Libertad Avanza",
         "color": "#7B68EE",
-        "abreviatura": "LLA"
+        "abreviatura": "LLA",
+        "canidate": "M"
       },
       {
         "id": "frente_3",
         "nombre": "Provincias Unidas",
         "color": "#f5a110",
-        "abreviatura": "PU"
+        "abreviatura": "PU",
+        "canidate": "F"
       },
       {
         "id": "otros",
         "nombre": "Otros",
         "color": "#FFA07A",
-        "abreviatura": "Otros"
+        "abreviatura": "Otros",
+        "canidate": "M"
       }
     ],
     "escenarios": [
