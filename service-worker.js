@@ -34,7 +34,7 @@
 const CACHE_VERSIONS = {
     HTML: '1.0.3',
     CSS: '1.0.5',
-    JS: '1.0.2',
+    JS: '1.0.3',
     JSON: '1.0.1',
     IMG: '1.0.0'
 };

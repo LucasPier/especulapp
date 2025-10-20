@@ -1945,18 +1945,17 @@ function obtenerNombreCargoSingular(frenteId) {
         if (!gruposConDatosReales.has(grupo.id)) {
             estadoGrupos[grupo.id].asistencia = valor;
             
-            // Actualizar el input visual
+            // Actualizar el input visual del range de asistencia
             const card = document.getElementById(`grupo-${grupo.id}`);
             if (card) {
                 const inputAsistencia = card.querySelector('.range-asistencia');
                 if (inputAsistencia) {
                     inputAsistencia.value = valor;
                 }
-                const valorLabel = document.getElementById(`valor-${grupo.id}-asistencia`);
-                if (valorLabel) {
-                    valorLabel.textContent = `${formatearPorcentaje(valor, 1)}%`;
-                }
             }
+            
+            // Actualizar TODOS los labels del grupo (incluye recalcular número de votos)
+            actualizarLabelsGrupo(grupo.id);
         }
     });
 
@@ -1979,18 +1978,17 @@ function obtenerNombreCargoSingular(frenteId) {
         if (!gruposConDatosReales.has(grupo.id)) {
             estadoGrupos[grupo.id].votosNulos = valor;
             
-            // Actualizar el input visual
+            // Actualizar el input visual del range de nulos
             const card = document.getElementById(`grupo-${grupo.id}`);
             if (card) {
                 const inputNulos = card.querySelector('.range-nulos');
                 if (inputNulos) {
                     inputNulos.value = valor;
                 }
-                const valorLabel = document.getElementById(`valor-${grupo.id}-nulos`);
-                if (valorLabel) {
-                    valorLabel.textContent = `${formatearPorcentaje(valor, 1)}%`;
-                }
             }
+            
+            // Actualizar TODOS los labels del grupo (incluye recalcular porcentajes normalizados de frentes)
+            actualizarLabelsGrupo(grupo.id);
         }
     });
 
