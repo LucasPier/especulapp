@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Desregistrar SW</title>
+</head>
+<body>
+    <h1>Desregistrando Service Worker...</h1>
+    <div id="status">Procesando...</div>
+    <script>
+        (async () => {
+            const status = document.getElementById('status');
+            try {
+                if ('serviceWorker' in navigator) {
+                    const registrations = await navigator.serviceWorker.getRegistrations();
+                    for (let registration of registrations) {
+                        await registration.unregister();
+                        console.log('SW desregistrado:', registration);
+                    }
+                    
+                    // Limpiar todos los cachés
+                    const cacheNames = await caches.keys();
+                    for (let cacheName of cacheNames) {
+                        await caches.delete(cacheName);
+                        console.log('Caché eliminado:', cacheName);
+                    }
+                    
+                    status.innerHTML = '✅ Service Worker desregistrado y cachés limpiados.<br><br><a href="index.html">Volver a la app</a>';
+                } else {
+                    status.innerHTML = '❌ Service Workers no soportados';
+                }
+            } catch (error) {
+                status.innerHTML = '❌ Error: ' + error.message;
+                console.error(error);
+            }
+        })();
+    </script>
+</body>
+</html>

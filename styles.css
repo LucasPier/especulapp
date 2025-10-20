@@ -26,12 +26,26 @@ body {
 }
 
 .container {
-    max-width: 1400px;
+    max-width: 1600px;
     margin: 0 auto;
     background-color: var(--background-color);
     border-radius: 20px;
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
     overflow: hidden;
+}
+
+@media (min-width: 1200px) {
+    .container {
+        max-height: 95vh;
+        display: flex;
+    }
+}
+
+@media (max-width: 1199px) {
+    .container {
+        display: flex;
+        flex-direction: column;
+    }
 }
 
 /* Header */
@@ -40,6 +54,30 @@ header {
     color: white;
     padding: 30px 40px;
     text-align: center;
+}
+
+/* Header Mobile: visible solo en pantallas pequeñas (<1200px) */
+.header-mobile {
+    display: block;
+    border-radius: 20px 20px 0 0; /* Redondear esquinas superiores */
+}
+
+@media (min-width: 1200px) {
+    .header-mobile {
+        display: none; /* Ocultar en desktop */
+    }
+}
+
+/* Header Desktop: visible solo en pantallas grandes (>=1200px) */
+.header-desktop {
+    display: none;
+}
+
+@media (min-width: 1200px) {
+    .header-desktop {
+        display: block;
+        border-radius: 0 20px 0 0; /* Redondear solo la esquina superior derecha */
+    }
 }
 
 header h1 {
@@ -65,6 +103,89 @@ main {
     padding: 40px;
 }
 
+/* Layout de dos columnas para pantallas grandes */
+@media (min-width: 1200px) {
+    .container {
+        display: flex;
+    }
+
+    .panel-izquierdo {
+        width: 480px;
+        min-width: 480px; /* Asegurar ancho mínimo para que los frentes no se partan en 2 líneas */
+        flex-shrink: 0;
+        height: 95vh;
+        overflow: hidden; /* Sin scroll en el panel, solo en el contenido interno */
+        padding: 0; /* Sin padding para ganar espacio */
+        background-color: var(--background-color);
+    }
+
+    .panel-derecho {
+        flex: 1;
+        height: 95vh;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        /* Estilos de scrollbar personalizados */
+        scrollbar-width: thin;
+        scrollbar-color: #669dea #ecf0f1;
+    }
+
+    .panel-derecho::-webkit-scrollbar {
+        width: 8px;
+    }
+
+    .panel-derecho::-webkit-scrollbar-track {
+        background: #ecf0f1;
+        border-radius: 4px;
+    }
+
+    .panel-derecho::-webkit-scrollbar-thumb {
+        background: #669dea;
+        border-radius: 4px;
+    }
+
+    .panel-derecho::-webkit-scrollbar-thumb:hover {
+        background: #4b8ba2;
+    }
+
+    .panel-derecho header {
+        flex-shrink: 0;
+    }
+
+    .panel-derecho main {
+        flex: 1;
+        padding: 40px;
+    }
+
+    .panel-derecho footer {
+        flex-shrink: 0;
+    }
+}
+
+/* Para pantallas medianas y pequeñas, mantener layout vertical */
+@media (max-width: 1199px) {
+    main {
+        padding: 40px;
+        overflow: visible;
+    }
+
+    .panel-izquierdo,
+    .panel-derecho {
+        width: 100%;
+        height: auto;
+    }
+
+    .panel-derecho {
+        display: block;
+    }
+}
+
+@media (min-width: 769px) and (max-width: 1199px) {
+    .panel-izquierdo {
+        padding: 40px;
+    }
+}
+
 section {
     margin-bottom: 40px;
 }
@@ -84,6 +205,52 @@ section h2 {
     padding: 30px;
     border-radius: 15px;
     box-shadow: var(--shadow);
+}
+
+@media (min-width: 1200px) {
+    .resultados-globales {
+        margin-bottom: 0;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        border-radius: 20px 0 0 20px; /* Redondear solo los bordes izquierdos */
+        overflow-y: auto; /* El scroll ahora está en resultados-globales para incluir todo */
+        /* Estilos de scrollbar personalizados */
+        scrollbar-width: thin;
+        scrollbar-color: #669dea #ecf0f1;
+    }
+
+    .resultados-globales::-webkit-scrollbar {
+        width: 8px;
+    }
+
+    .resultados-globales::-webkit-scrollbar-track {
+        background: #ecf0f1;
+        border-radius: 4px;
+    }
+
+    .resultados-globales::-webkit-scrollbar-thumb {
+        background: #669dea;
+        border-radius: 4px;
+    }
+
+    .resultados-globales::-webkit-scrollbar-thumb:hover {
+        background: #4b8ba2;
+    }
+
+    .resultados-globales h2 {
+        flex-shrink: 0;
+        margin-bottom: 25px;
+    }
+
+    .resultados-globales .grafico-barras {
+        flex-shrink: 0; /* No permitir que se encoja */
+        margin-bottom: 30px; /* Espacio antes de las estadísticas */
+    }
+
+    .resultados-globales .total-votos-info {
+        flex-shrink: 0;
+    }
 }
 
 .total-votos-info {
@@ -483,6 +650,14 @@ input:checked + .slider:before {
     transform: translateY(0);
 }
 
+.btn-control-masivo.btn-reset {
+    background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+}
+
+.btn-control-masivo.btn-reset:hover {
+    background: linear-gradient(135deg, #c0392b 0%, #a93226 100%);
+}
+
 /* Modal */
 .modal {
     display: none;
@@ -632,6 +807,35 @@ input:checked + .slider:before {
     box-shadow: var(--shadow);
 }
 
+/* Modal de Diálogo Reutilizable */
+.modal-dialogo .modal-dialogo-content {
+    max-width: 450px;
+    text-align: center;
+}
+
+.modal-dialogo-content h3 {
+    color: var(--primary-color);
+    margin-bottom: 20px;
+    font-size: 1.6em;
+}
+
+.modal-dialogo-content p {
+    color: var(--text-color);
+    margin-bottom: 30px;
+    font-size: 1.1em;
+    line-height: 1.5;
+}
+
+.modal-dialogo .modal-buttons {
+    justify-content: center;
+    gap: 15px;
+}
+
+.modal-dialogo .btn-modal-cancel,
+.modal-dialogo .btn-modal-apply {
+    min-width: 120px;
+}
+
 /* Footer */
 footer {
     background-color: var(--secondary-color);
@@ -641,13 +845,29 @@ footer {
     font-size: 0.9em;
 }
 
+@media (min-width: 1200px) {
+    footer {
+        margin-top: auto; /* Empuja el footer al fondo del panel derecho */
+        border-radius: 0 0 20px 0; /* Redondear solo la esquina inferior derecha */
+    }
+}
+
 /* Responsive */
 @media (max-width: 768px) {
     body {
         padding: 10px;
     }
 
+    .container {
+        border-radius: 10px;
+    }
+
     main {
+        padding: 20px;
+        height: auto; /* Remover altura fija en móviles */
+    }
+
+    header {
         padding: 20px;
     }
 
@@ -665,6 +885,28 @@ footer {
 
     .stat-box {
         min-width: 100%;
+    }
+
+    /* Asegurar que en móvil no haya layout de columnas */
+    .panel-izquierdo,
+    .panel-derecho {
+        width: 100%;
+        height: auto;
+        overflow-y: visible;
+        padding: 0;
+    }
+
+    .panel-izquierdo {
+        padding: 20px;
+    }
+
+    .panel-derecho {
+        display: block;
+    }
+
+    .resultados-globales {
+        margin-bottom: 20px;
+        border-radius: 15px; /* Restaurar border-radius completo en móviles */
     }
 }
 

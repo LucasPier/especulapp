@@ -3,19 +3,37 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <!-- PWA Meta Tags -->
+    <meta name="description" content="Simulador de escenarios electorales con datos en tiempo real para Ciudad Futura, Santa Fe, Argentina">
+    <meta name="theme-color" content="#669dea">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="EspeculApp">
+    
     <title>EspeculApp - Simulador Electoral</title>
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="manifest.json">
+    
+    <!-- Icons -->
+    <link rel="icon" type="image/svg+xml" href="img/icono.svg">
+    <link rel="apple-touch-icon" href="img/icono512.png">
+    
+    <!-- Styles -->
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <div class="container">
-        <header>
+        <!-- Header para móviles/tablets (se muestra antes de los paneles) -->
+        <header class="header-mobile">
             <h1>🗳️ EspeculApp</h1>
             <p class="subtitle">Simulador de Escenarios Electorales de Ciudad Futura</p>
-            <div id="eleccion-info"></div>
+            <div id="eleccion-info-mobile"></div>
         </header>
 
-        <main>
-            <!-- Sección de Resultados Globales -->
+        <!-- Panel Izquierdo: Resultados Globales (fijo) -->
+        <aside class="panel-izquierdo">
             <section class="resultados-globales">
                 <h2>📊 Resultado Global</h2>
                 <div id="grafico-resultados" class="grafico-barras"></div>
@@ -34,41 +52,56 @@
                     </div>
                 </div>
             </section>
+        </aside>
 
-            <!-- Sección de Controles Generales -->
-            <section class="controles-generales">
-                <h2>🎛️ Controles Generales</h2>
-                <div class="controles-generales-contenido">
-                    <div class="control-switch-container">
-                        <label class="switch-label">
-                            <span class="switch-text">Incluir votos blancos como válidos</span>
-                            <label class="switch">
-                                <input type="checkbox" id="incluir-blancos" checked>
-                                <span class="slider"></span>
+        <!-- Panel Derecho: Header, Controles, Grupos y Footer (scrolleable) -->
+        <div class="panel-derecho">
+            <!-- Header para desktop (dentro del panel derecho scrolleable) -->
+            <header class="header-desktop">
+                <h1>🗳️ EspeculApp</h1>
+                <p class="subtitle">Simulador de Escenarios Electorales de Ciudad Futura</p>
+                <div id="eleccion-info-desktop"></div>
+            </header>
+
+            <main>
+                <!-- Sección de Controles Generales -->
+                <section class="controles-generales">
+                    <h2>🎛️ Controles Generales</h2>
+                    <div class="controles-generales-contenido">
+                        <div class="control-switch-container">
+                            <label class="switch-label">
+                                <span class="switch-text">Incluir votos blancos como válidos</span>
+                                <label class="switch">
+                                    <input type="checkbox" id="incluir-blancos" checked>
+                                    <span class="slider"></span>
+                                </label>
                             </label>
-                        </label>
+                        </div>
+                        <div class="controles-masivos">
+                            <button class="btn-control-masivo" id="btn-asistencia-masiva">
+                                📊 Configurar Asistencia Global
+                            </button>
+                            <button class="btn-control-masivo" id="btn-nulos-masivos">
+                                ❌ Configurar Votos Nulos Globales
+                            </button>
+                            <button class="btn-control-masivo btn-reset" id="btn-resetear-configuracion">
+                                🔄 Resetear Configuración
+                            </button>
+                        </div>
                     </div>
-                    <div class="controles-masivos">
-                        <button class="btn-control-masivo" id="btn-asistencia-masiva">
-                            📊 Configurar Asistencia Global
-                        </button>
-                        <button class="btn-control-masivo" id="btn-nulos-masivos">
-                            ❌ Configurar Votos Nulos Globales
-                        </button>
-                    </div>
-                </div>
-            </section>
+                </section>
 
-            <!-- Sección de Grupos -->
-            <section class="grupos-container">
-                <h2>⚙️ Configurar Grupos Electorales</h2>
-                <div id="grupos-grid" class="grupos-grid"></div>
-            </section>
-        </main>
+                <!-- Sección de Grupos -->
+                <section class="grupos-container">
+                    <h2>⚙️ Configurar Grupos Electorales</h2>
+                    <div id="grupos-grid" class="grupos-grid"></div>
+                </section>
+            </main>
 
-        <footer>
-            <p>EspeculApp © 2025 - Simulador Electoral de Ciudad Futura</p>
-        </footer>
+            <footer>
+                <p>EspeculApp © 2025 - Simulador Electoral de Ciudad Futura</p>
+            </footer>
+        </div>
     </div>
 
     <!-- Modal para Asistencia Masiva -->
@@ -111,6 +144,109 @@
         </div>
     </div>
 
+    <!-- Modal Reutilizable para Confirmaciones y Alertas -->
+    <div id="modal-dialogo" class="modal modal-dialogo">
+        <div class="modal-content modal-dialogo-content">
+            <h3 id="modal-dialogo-titulo">Confirmación</h3>
+            <p id="modal-dialogo-mensaje">¿Estás seguro?</p>
+            <div class="modal-buttons">
+                <button class="btn-modal-cancel" id="modal-dialogo-btn-cancelar">Cancelar</button>
+                <button class="btn-modal-apply" id="modal-dialogo-btn-aceptar">Aceptar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main App Script -->
     <script src="app.js"></script>
+    
+    <!-- Service Worker Registration -->
+    <script>
+        // Registrar Service Worker para funcionalidad PWA
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', async () => {
+                try {
+                    const registration = await navigator.serviceWorker.register('./service-worker.js', {
+                        scope: './'
+                    });
+                    
+                    console.log('✅ Service Worker registrado exitosamente:', registration.scope);
+                    
+                    // Detectar actualizaciones del Service Worker
+                    registration.addEventListener('updatefound', () => {
+                        const newWorker = registration.installing;
+                        console.log('🔄 Nueva versión del Service Worker detectada');
+                        
+                        newWorker.addEventListener('statechange', () => {
+                            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                // Hay una nueva versión disponible
+                                console.log('📦 Nueva versión de la app disponible');
+                                
+                                // Opcional: Mostrar notificación al usuario
+                                if (window.EspeculApp && window.EspeculApp.isReady()) {
+                                    // Usar el sistema de modales de la app si está disponible
+                                    // Por ahora solo log en consola
+                                    console.log('💡 Recarga la página para obtener la última versión');
+                                }
+                            }
+                        });
+                    });
+                    
+                } catch (error) {
+                    console.error('❌ Error al registrar Service Worker:', error);
+                }
+            });
+            
+            // Detectar cuando el Service Worker toma control
+            navigator.serviceWorker.addEventListener('controllerchange', () => {
+                console.log('🔄 Service Worker actualizado y activado');
+            });
+        } else {
+            console.warn('⚠️ Service Workers no soportados en este navegador');
+        }
+    </script>
+    
+    <!-- PWA Install Prompt (opcional) -->
+    <script>
+        // Capturar evento de instalación de PWA
+        let deferredPrompt;
+        
+        window.addEventListener('beforeinstallprompt', (e) => {
+            // Prevenir que el navegador muestre su propio prompt
+            e.preventDefault();
+            
+            // Guardar el evento para mostrarlo más tarde
+            deferredPrompt = e;
+            
+            console.log('📱 PWA instalable detectada');
+            
+            // Aquí podrías mostrar un botón de instalación personalizado
+            // Por ejemplo, agregando una clase a un botón oculto
+            // document.getElementById('install-button').style.display = 'block';
+        });
+        
+        // Función para instalar la PWA (puedes llamarla desde un botón)
+        async function instalarPWA() {
+            if (!deferredPrompt) {
+                console.log('PWA ya instalada o no instalable');
+                return;
+            }
+            
+            // Mostrar el prompt de instalación
+            deferredPrompt.prompt();
+            
+            // Esperar la respuesta del usuario
+            const { outcome } = await deferredPrompt.userChoice;
+            console.log(`Usuario ${outcome === 'accepted' ? 'aceptó' : 'rechazó'} la instalación`);
+            
+            // Limpiar el prompt
+            deferredPrompt = null;
+        }
+        
+        // Detectar cuando la app fue instalada
+        window.addEventListener('appinstalled', () => {
+            console.log('✅ PWA instalada exitosamente');
+            deferredPrompt = null;
+        });
+    </script>
 </body>
 </html>

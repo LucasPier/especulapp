@@ -22,71 +22,19 @@ const EspeculApp = (function() {
     // ========================================
     // SISTEMA DE MODALES REUTILIZABLES
     // ========================================
-    // 
-    // Sistema de modales personalizables basado en promesas para reemplazar
-    // los alert() y confirm() nativos con una interfaz moderna.
-    // 
-    // FUNCIONES DISPONIBLES:
-    // - mostrarDialogo(opciones)              → Modal personalizable completo
-    // - confirmar(mensaje, titulo?)           → Confirmación con Sí/No
-    // - alerta(mensaje, titulo?)              → Alerta con solo botón Aceptar
-    // - confirmarAccionPeligrosa(mensaje, titulo?) → Confirmación con botón rojo
-    // 
-    // MANEJO DE RESPUESTAS:
-    // - resolve(true) cuando el usuario acepta/confirma
-    // - reject({cancelado: true, mensaje: string}) cuando cancela/rechaza
-    // - La tecla ESC y clic fuera del modal también cancelan
-    // 
-    // EJEMPLOS DE USO:
-    // 
-    // 1. Confirmación simple:
-    //    try {
-    //        await confirmar('¿Deseas continuar?', 'Confirmación');
-    //        // Usuario aceptó
-    //    } catch (error) {
-    //        // Usuario canceló
-    //    }
-    // 
-    // 2. Alerta informativa:
-    //    await alerta('Operación exitosa', 'Éxito');
-    // 
-    // 3. Acción peligrosa:
-    //    try {
-    //        await confirmarAccionPeligrosa('Esto eliminará todos los datos');
-    //        // Usuario confirmó acción peligrosa
-    //    } catch (error) {
-    //        // Usuario canceló
-    //    }
-    //
-    // ========================================
 
     /**
-     * Muestra un modal de diálogo reutilizable (función base)
-     * 
+     * Muestra un modal de diálogo reutilizable
      * @param {Object} opciones - Opciones de configuración del modal
      * @param {string} opciones.titulo - Título del modal
      * @param {string} opciones.mensaje - Mensaje a mostrar
      * @param {string} [opciones.textoAceptar='Aceptar'] - Texto del botón de aceptar
      * @param {string} [opciones.textoCancelar='Cancelar'] - Texto del botón de cancelar (null para ocultar)
-     * @param {string} [opciones.tipoAceptar='primary'] - Tipo de botón: 'primary' (azul), 'danger' (rojo), 'success' (verde)
-     * @returns {Promise<boolean>} - Promesa que resuelve true si acepta, rechaza con {cancelado: true} si cancela
-     * 
-     * @example
-     * try {
-     *     await mostrarDialogo({
-     *         titulo: 'Eliminar',
-     *         mensaje: '¿Eliminar permanentemente?',
-     *         textoAceptar: 'Eliminar',
-     *         textoCancelar: 'Conservar',
-     *         tipoAceptar: 'danger'
-     *     });
-     *     // Usuario aceptó
-     * } catch (error) {
-     *     // Usuario canceló
-     * }
+     * @param {string} [opciones.tipoAceptar='primary'] - Tipo de botón: 'primary', 'danger', 'success'
+     * @returns {Promise<boolean>} - Promesa que resuelve true si acepta, false si cancela/rechaza
      */
     function mostrarDialogo(opciones) {
-        return new Promise((resolve, reject) => {
+    return new Promise((resolve, reject) => {
         const {
             titulo = 'Confirmación',
             mensaje = '¿Estás seguro?',
@@ -169,97 +117,71 @@ const EspeculApp = (function() {
 
         // Mostrar modal
         modal.style.display = 'block';
+    });
+}
+
+/**
+ * Muestra un modal de confirmación
+ * @param {string} mensaje - Mensaje de confirmación
+ * @param {string} [titulo='Confirmación'] - Título del modal
+ * @returns {Promise<boolean>} - Promesa que resuelve true si confirma, rechaza si cancela
+ */
+async function confirmar(mensaje, titulo = 'Confirmación') {
+    try {
+        return await mostrarDialogo({
+            titulo,
+            mensaje,
+            textoAceptar: 'Sí',
+            textoCancelar: 'No',
+            tipoAceptar: 'primary'
         });
+    } catch (error) {
+        // Usuario canceló, re-lanzar el error para que se pueda manejar en la función llamadora
+        throw error;
     }
+}
 
-    /**
-     * Muestra un modal de confirmación (wrapper de conveniencia)
-     * 
-     * @param {string} mensaje - Mensaje de confirmación
-     * @param {string} [titulo='Confirmación'] - Título del modal
-     * @returns {Promise<boolean>} - Promesa que resuelve true si confirma, rechaza con {cancelado: true} si cancela
-     * 
-     * @example
-     * try {
-     *     await confirmar('¿Guardar cambios?', 'Guardar');
-     *     guardarCambios();
-     * } catch (error) {
-     *     console.log('Guardado cancelado');
-     * }
-     */
-    async function confirmar(mensaje, titulo = 'Confirmación') {
-        try {
-            return await mostrarDialogo({
-                titulo,
-                mensaje,
-                textoAceptar: 'Sí',
-                textoCancelar: 'No',
-                tipoAceptar: 'primary'
-            });
-        } catch (error) {
-            // Usuario canceló, re-lanzar el error para que se pueda manejar en la función llamadora
-            throw error;
-        }
+/**
+ * Muestra un modal de alerta (solo botón Aceptar)
+ * @param {string} mensaje - Mensaje de la alerta
+ * @param {string} [titulo='Aviso'] - Título del modal
+ * @returns {Promise<boolean>} - Promesa que resuelve cuando se cierra
+ */
+async function alerta(mensaje, titulo = 'Aviso') {
+    try {
+        return await mostrarDialogo({
+            titulo,
+            mensaje,
+            textoAceptar: 'Aceptar',
+            textoCancelar: null,
+            tipoAceptar: 'primary'
+        });
+    } catch (error) {
+        // En alertas no hay cancelar, pero por si acaso
+        return true;
     }
+}
 
-    /**
-     * Muestra un modal de alerta (solo botón Aceptar, no se puede cancelar)
-     * 
-     * @param {string} mensaje - Mensaje de la alerta
-     * @param {string} [titulo='Aviso'] - Título del modal
-     * @returns {Promise<boolean>} - Promesa que siempre resuelve true (no rechaza)
-     * 
-     * @example
-     * await alerta('Operación completada exitosamente', '✅ Éxito');
-     * console.log('Usuario cerró la alerta');
-     */
-    async function alerta(mensaje, titulo = 'Aviso') {
-        try {
-            return await mostrarDialogo({
-                titulo,
-                mensaje,
-                textoAceptar: 'Aceptar',
-                textoCancelar: null,
-                tipoAceptar: 'primary'
-            });
-        } catch (error) {
-            // En alertas no hay cancelar, pero por si acaso
-            return true;
-        }
+/**
+ * Muestra un modal de confirmación de acción peligrosa
+ * @param {string} mensaje - Mensaje de confirmación
+ * @param {string} [titulo='¿Estás seguro?'] - Título del modal
+ * @returns {Promise<boolean>} - Promesa que resuelve true si confirma, rechaza si cancela
+ */
+async function confirmarAccionPeligrosa(mensaje, titulo = '¿Confirmás que querés continuar?') {
+    try {
+        return await mostrarDialogo({
+            titulo,
+            mensaje,
+            textoAceptar: 'Sí, continuar',
+            textoCancelar: 'Cancelar',
+            tipoAceptar: 'danger'
+        });
+    } catch (error) {
+        // Usuario canceló, re-lanzar el error para que se pueda manejar en la función llamadora
+        throw error;
     }
-
-    /**
-     * Muestra un modal de confirmación para acciones peligrosas (botón rojo de advertencia)
-     * 
-     * @param {string} mensaje - Mensaje de confirmación/advertencia
-     * @param {string} [titulo='¿Confirmás que querés continuar?'] - Título del modal
-     * @returns {Promise<boolean>} - Promesa que resuelve true si confirma, rechaza con {cancelado: true} si cancela
-     * 
-     * @example
-     * try {
-     *     await confirmarAccionPeligrosa(
-     *         'Esta acción eliminará todos los datos y no se puede deshacer.',
-     *         '⚠️ Acción Peligrosa'
-     *     );
-     *     eliminarTodosDatos();
-     * } catch (error) {
-     *     console.log('Eliminación cancelada');
-     * }
-     */
-    async function confirmarAccionPeligrosa(mensaje, titulo = '¿Confirmás que querés continuar?') {
-        try {
-            return await mostrarDialogo({
-                titulo,
-                mensaje,
-                textoAceptar: 'Sí, continuar',
-                textoCancelar: 'Cancelar',
-                tipoAceptar: 'danger'
-            });
-        } catch (error) {
-            // Usuario canceló, re-lanzar el error para que se pueda manejar en la función llamadora
-            throw error;
-        }
-    }
+}
 
     // ========================================
     // FIN SISTEMA DE MODALES
@@ -267,7 +189,7 @@ const EspeculApp = (function() {
 
     // Cargar archivos de configuración
     async function cargarConfiguraciones() {
-        try {
+    try {
         const [respuestaEleccion, respuestaGrupos] = await Promise.all([
             fetch('configuracion_eleccion.json'),
             fetch('configuracion_grupos.json')
@@ -294,7 +216,7 @@ const EspeculApp = (function() {
 }
 
 // Cargar datos reales desde el servidor (simula consulta a API)
-    async function cargarDatosServidor() {
+async function cargarDatosServidor() {
     try {
         const respuesta = await fetch('datos_servidor.json');
         datosServidor = await respuesta.json();
@@ -324,7 +246,7 @@ const EspeculApp = (function() {
 }
 
 // Inicializar polling automático (cada 60 segundos)
-    function inicializarPolleo() {
+function inicializarPolleo() {
     // Limpiar intervalo anterior si existe
     if (intervaloPolleoId) {
         clearInterval(intervaloPolleoId);
@@ -340,7 +262,7 @@ const EspeculApp = (function() {
 }
 
 // Detectar cuando el usuario vuelve a la aplicación
-    function inicializarDeteccionVisibilidad() {
+function inicializarDeteccionVisibilidad() {
     document.addEventListener('visibilitychange', async () => {
         if (!document.hidden) {
             // Usuario volvió a la aplicación
@@ -357,7 +279,7 @@ const EspeculApp = (function() {
 }
 
 // Inicializar estado de cada grupo con valores por defecto
-    function inicializarEstadoGrupos() {
+function inicializarEstadoGrupos() {
     // Solo inicializar grupos que no están en datos reales y no tienen estado guardado
     const primerEscenario = configEleccion.eleccion.escenarios[0];
     
@@ -383,7 +305,7 @@ const EspeculApp = (function() {
 }
 
 // Cargar estado desde LocalStorage
-    function cargarEstadoDesdeLocalStorage() {
+function cargarEstadoDesdeLocalStorage() {
     try {
         const estadoGuardado = localStorage.getItem(STORAGE_KEY);
         const switchGuardado = localStorage.getItem(STORAGE_SWITCH_KEY);
@@ -408,7 +330,7 @@ const EspeculApp = (function() {
 }
 
 // Sincronizar el switch visual con el estado cargado
-    function sincronizarSwitchBlancos() {
+function sincronizarSwitchBlancos() {
     const switchBlancos = document.getElementById('incluir-blancos');
     if (switchBlancos) {
         switchBlancos.checked = incluirBlancosComoValidos;
@@ -416,7 +338,7 @@ const EspeculApp = (function() {
 }
 
 // Guardar estado en LocalStorage
-    function guardarEstadoEnLocalStorage() {
+function guardarEstadoEnLocalStorage() {
     try {
         // Solo guardar estados de grupos de simulación (no datos reales)
         const estadoParaGuardar = {};
@@ -434,7 +356,7 @@ const EspeculApp = (function() {
 }
 
 // Resetear configuración a valores por defecto
-    async function resetearConfiguracion() {
+async function resetearConfiguracion() {
     try {
         const confirmado = await confirmarAccionPeligrosa(
             '¿Confirmás que querés resetear toda la configuración? Se reestablecerán los datos al primer escenario electoral en todos los grupos electorales que no contengan datos reales.',
@@ -519,7 +441,7 @@ const EspeculApp = (function() {
 }
 
 // Aplicar un escenario a un grupo
-    function aplicarEscenario(grupoId, escenarioId) {
+function aplicarEscenario(grupoId, escenarioId) {
     const escenario = configEleccion.eleccion.escenarios.find(e => e.id === escenarioId);
     if (!escenario) return;
     
@@ -538,7 +460,7 @@ const EspeculApp = (function() {
 }
 
 // Función auxiliar para obtener el indicador visual (emoji o círculo) según el tipo
-    function obtenerIndicadorVisual(resultado) {
+function obtenerIndicadorVisual(resultado) {
     if (resultado.id === 'nulos') {
         return '❌'; // Cruz roja para nulos
     }
@@ -547,7 +469,7 @@ const EspeculApp = (function() {
 }
 
 // Renderizar interfaz de usuario
-    function renderizarUI() {
+function renderizarUI() {
     const gruposGrid = document.getElementById('grupos-grid');
     
     // Si ya hay tarjetas renderizadas, solo actualizarlas
@@ -568,7 +490,7 @@ const EspeculApp = (function() {
 }
 
 // Nueva función para actualizar una tarjeta sin recrearla
-    function actualizarTarjetaGrupo(grupo) {
+function actualizarTarjetaGrupo(grupo) {
     const card = document.getElementById(`grupo-${grupo.id}`);
     if (!card) return;
     
@@ -590,7 +512,7 @@ const EspeculApp = (function() {
 }
 
 // Nueva función para actualizar tarjeta con datos reales sin recrearla
-    function actualizarTarjetaDatosReales(card, grupo) {
+function actualizarTarjetaDatosReales(card, grupo) {
     const datosGrupo = datosServidor.grupos_con_datos.find(g => g.id === grupo.id);
     if (!datosGrupo) return;
     
@@ -753,7 +675,7 @@ const EspeculApp = (function() {
 }
 
 // Crear tarjeta de grupo
-    function crearTarjetaGrupo(grupo) {
+function crearTarjetaGrupo(grupo) {
     const card = document.createElement('div');
     card.className = 'grupo-card';
     card.id = `grupo-${grupo.id}`;
@@ -773,7 +695,7 @@ const EspeculApp = (function() {
 }
 
 // Renderizar grupo con datos reales del servidor
-    function renderizarGrupoConDatosReales(card, grupo) {
+function renderizarGrupoConDatosReales(card, grupo) {
     const datosGrupo = datosServidor.grupos_con_datos.find(g => g.id === grupo.id);
     
     if (!datosGrupo) return;
@@ -910,7 +832,7 @@ const EspeculApp = (function() {
 }
 
 // Renderizar grupo con controles de simulación
-    function renderizarGrupoSimulacion(card, grupo) {
+function renderizarGrupoSimulacion(card, grupo) {
     const estado = estadoGrupos[grupo.id];
 
     let controlesHTML = '';
@@ -1032,7 +954,7 @@ const EspeculApp = (function() {
 }
 
 // Calcular porcentajes normalizados para un grupo
-    function calcularPorcentajesNormalizados(grupoId) {
+function calcularPorcentajesNormalizados(grupoId) {
     const estado = estadoGrupos[grupoId];
     const grupo = configGrupos.grupos.find(g => g.id === grupoId);
     
@@ -1090,7 +1012,7 @@ const EspeculApp = (function() {
 }
 
 // Actualizar labels de porcentajes en un grupo
-    function actualizarLabelsGrupo(grupoId) {
+function actualizarLabelsGrupo(grupoId) {
     const porcentajes = calcularPorcentajesNormalizados(grupoId);
     const resultados = calcularResultadosGrupo(configGrupos.grupos.find(g => g.id === grupoId));
     
@@ -1124,7 +1046,7 @@ const EspeculApp = (function() {
 }
 
 // Actualizar color de fondo de un input range basado en su valor
-    function actualizarColorRangeInput(input) {
+function actualizarColorRangeInput(input) {
     const valor = parseFloat(input.value);
     const max = parseFloat(input.max);
     const color = input.dataset.color;
@@ -1141,7 +1063,7 @@ const EspeculApp = (function() {
 }
 
 // Actualizar todos los colores de range inputs en un grupo
-    function actualizarColoresRangeGrupo(grupoId) {
+function actualizarColoresRangeGrupo(grupoId) {
     const card = document.getElementById(`grupo-${grupoId}`);
     if (!card) return;
     
@@ -1157,7 +1079,7 @@ const EspeculApp = (function() {
 }
 
 // Actualizar inputs visuales de un grupo con los valores del estado
-    function actualizarInputsGrupo(grupoId) {
+function actualizarInputsGrupo(grupoId) {
     const estado = estadoGrupos[grupoId];
     const card = document.getElementById(`grupo-${grupoId}`);
     
@@ -1177,7 +1099,7 @@ const EspeculApp = (function() {
 }
 
 // Deseleccionar escenario activo
-    function deseleccionarEscenario(grupoId) {
+function deseleccionarEscenario(grupoId) {
     estadoGrupos[grupoId].escenarioActivo = null;
     
     // Actualizar botones visualmente
@@ -1188,7 +1110,7 @@ const EspeculApp = (function() {
 }
 
 // Agregar event listeners a los controles
-    function agregarEventListeners(card, grupoId) {
+function agregarEventListeners(card, grupoId) {
     // Botones de escenarios
     card.querySelectorAll('.escenario-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
@@ -1271,7 +1193,7 @@ const EspeculApp = (function() {
 }
 
 // Calcular resultados de un grupo
-    function calcularResultadosGrupo(grupo) {
+function calcularResultadosGrupo(grupo) {
     const estado = estadoGrupos[grupo.id];
     const totalElectores = grupo.electores;
     
@@ -1338,7 +1260,7 @@ const EspeculApp = (function() {
 }
 
 // Calcular resultados globales
-    function calcularResultadosGlobales() {
+function calcularResultadosGlobales() {
     const resultadosGlobales = {
         frentes: {},
         blancos: 0,
@@ -1390,7 +1312,7 @@ const EspeculApp = (function() {
 }
 
 // Actualizar visualización de resultados
-    function calcularYActualizarResultados() {
+function calcularYActualizarResultados() {
     const resultadosGlobales = calcularResultadosGlobales();
     
     // Actualizar estadísticas globales
@@ -1478,7 +1400,7 @@ const EspeculApp = (function() {
 }
 
 // Renderizar gráfico de barras
-    function renderizarGraficoBarras(resultados) {
+function renderizarGraficoBarras(resultados) {
     const contenedor = document.getElementById('grafico-resultados');
     const barrasExistentes = contenedor.querySelectorAll('.barra-contenedor');
     
@@ -1521,7 +1443,7 @@ const EspeculApp = (function() {
 }
 
 // Función auxiliar para crear una barra nueva
-    function crearBarraHTML(resultado) {
+function crearBarraHTML(resultado) {
     const barraDiv = document.createElement('div');
     barraDiv.className = 'barra-contenedor';
     barraDiv.dataset.resultadoId = resultado.id;
@@ -1565,7 +1487,7 @@ const EspeculApp = (function() {
 }
 
 // Función auxiliar para actualizar una barra existente
-    function actualizarBarraExistente(barraDiv, resultado) {
+function actualizarBarraExistente(barraDiv, resultado) {
     const porcentajeSpan = barraDiv.querySelector('.frente-porcentaje');
     const votosSpan = barraDiv.querySelector('.frente-votos');
     const barraFill = barraDiv.querySelector('.barra-fill');
@@ -1583,7 +1505,7 @@ const EspeculApp = (function() {
 
 
 // Actualizar resultados de cada grupo individual
-    function actualizarResultadosGrupos() {
+function actualizarResultadosGrupos() {
     configGrupos.grupos.forEach(grupo => {
         // Solo actualizar grupos de simulación (no los que tienen datos reales)
         if (gruposConDatosReales.has(grupo.id)) {
@@ -1626,17 +1548,17 @@ const EspeculApp = (function() {
 }
 
 // Formatear número con separadores de miles
-    function formatearNumero(numero) {
+function formatearNumero(numero) {
     return numero.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
 }
 
 // Formatear porcentaje con coma decimal (ej: 37.94 -> 37,94)
-    function formatearPorcentaje(numero, decimales = 2) {
+function formatearPorcentaje(numero, decimales = 2) {
     return numero.toFixed(decimales).replace('.', ',');
 }
 
 // Inicializar controles generales
-    function inicializarControlesGenerales() {
+function inicializarControlesGenerales() {
     // Switch de incluir blancos
     const switchBlancos = document.getElementById('incluir-blancos');
     switchBlancos.addEventListener('change', (e) => {
@@ -1699,7 +1621,7 @@ const EspeculApp = (function() {
 }
 
 // Calcular promedio de asistencia de datos reales
-    function calcularPromedioAsistencia() {
+function calcularPromedioAsistencia() {
     if (!datosServidor || !datosServidor.grupos_con_datos || datosServidor.grupos_con_datos.length === 0) {
         return null;
     }
@@ -1714,7 +1636,7 @@ const EspeculApp = (function() {
 }
 
 // Calcular promedio de votos nulos de datos reales
-    function calcularPromedioNulos() {
+function calcularPromedioNulos() {
     if (!datosServidor || !datosServidor.grupos_con_datos || datosServidor.grupos_con_datos.length === 0) {
         return null;
     }
@@ -1729,7 +1651,7 @@ const EspeculApp = (function() {
 }
 
 // Configurar botones de promedio en modales
-    function configurarBotonesPromedio() {
+function configurarBotonesPromedio() {
     const btnPromedioAsistencia = document.getElementById('btn-promedio-asistencia');
     const btnPromedioNulos = document.getElementById('btn-promedio-nulos');
     
@@ -1763,12 +1685,12 @@ const EspeculApp = (function() {
 }
 
 // Abrir modal
-    function abrirModal(modalId) {
+function abrirModal(modalId) {
     document.getElementById(modalId).style.display = 'block';
 }
 
 // Cerrar modal
-    function cerrarModal(modalId) {
+function cerrarModal(modalId) {
     if (!modalId) {
         console.warn('cerrarModal: No se proporcionó un modalId');
         return;
@@ -1783,7 +1705,7 @@ const EspeculApp = (function() {
 }
 
 // Aplicar asistencia global a todos los grupos
-    async function aplicarAsistenciaGlobal() {
+async function aplicarAsistenciaGlobal() {
     const valor = parseFloat(document.getElementById('input-asistencia-global').value);
     
     if (valor < 0 || valor > 100) {
@@ -1817,7 +1739,7 @@ const EspeculApp = (function() {
 }
 
 // Aplicar votos nulos global a todos los grupos
-    async function aplicarNulosGlobal() {
+async function aplicarNulosGlobal() {
     const valor = parseFloat(document.getElementById('input-nulos-global').value);
     
     if (valor < 0 || valor > 100) {

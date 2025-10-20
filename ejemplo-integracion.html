@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <!-- PWA Meta Tags -->
+    <meta name="description" content="Ejemplo de integración de EspeculApp - Simulador electoral de Ciudad Futura">
+    <meta name="theme-color" content="#667eea">
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/svg+xml" href="img/icono.svg">
+    
+    <title>Ejemplo de Integración - EspeculApp</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        /* Estilos personalizados para la página de demostración */
+        .demo-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem;
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        
+        .demo-controls {
+            background: #1a1f26;
+            padding: 1.5rem;
+            margin: 2rem auto;
+            max-width: 600px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+        
+        .demo-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 0.5rem;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .demo-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(102, 126, 234, 0.4);
+        }
+        
+        .demo-button:active {
+            transform: translateY(0);
+        }
+        
+        .demo-status {
+            background: #0f1419;
+            padding: 1rem;
+            margin: 1rem 0;
+            border-left: 4px solid #667eea;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 14px;
+        }
+        
+        .status-ok {
+            color: #2ecc71;
+        }
+        
+        .status-error {
+            color: #e74c3c;
+        }
+        
+        .status-info {
+            color: #3498db;
+        }
+    </style>
+</head>
+<body>
+    <div class="demo-header">
+        <h1>🎯 EspeculApp - Ejemplo de Integración</h1>
+        <p>Demostración de cómo integrar la librería en otra aplicación</p>
+    </div>
+
+    <div class="demo-controls">
+        <h2 style="margin-top: 0; color: #fff;">🎮 Controles de la Librería</h2>
+        
+        <div class="demo-status" id="status">
+            <span class="status-info">⏳ Esperando interacción...</span>
+        </div>
+        
+        <button class="demo-button" onclick="verificarEstado()">
+            ✅ Verificar Estado
+        </button>
+        
+        <button class="demo-button" onclick="obtenerVersion()">
+            📦 Ver Versión
+        </button>
+        
+        <button class="demo-button" onclick="reiniciarApp()">
+            🔄 Reiniciar App
+        </button>
+        
+        <button class="demo-button" onclick="destruirApp()">
+            🗑️ Destruir App
+        </button>
+        
+        <button class="demo-button" onclick="inicializarApp()">
+            🚀 Inicializar App
+        </button>
+    </div>
+
+    <!-- Aquí va el contenido de la aplicación EspeculApp -->
+    <div class="container">
+        <!-- Header para móviles/tablets -->
+        <header class="header-mobile">
+            <h1>🗳️ EspeculApp</h1>
+            <p class="subtitle">Simulador de Escenarios Electorales de Ciudad Futura</p>
+            <div id="eleccion-info-mobile"></div>
+        </header>
+
+        <!-- Panel Izquierdo: Resultados Globales -->
+        <aside class="panel-izquierdo">
+            <section class="resultados-globales">
+                <h2>📊 Resultado Global</h2>
+                <div id="grafico-resultados" class="grafico-barras"></div>
+                <div class="total-votos-info">
+                    <div class="stat-box">
+                        <span class="stat-label">Total Electores</span>
+                        <span class="stat-value" id="total-electores">0</span>
+                    </div>
+                    <div class="stat-box">
+                        <span class="stat-label">Votos Válidos</span>
+                        <span class="stat-value" id="total-votos-validos">0</span>
+                    </div>
+                    <div class="stat-box">
+                        <span class="stat-label">Participación</span>
+                        <span class="stat-value" id="participacion-global">0%</span>
+                    </div>
+                </div>
+            </section>
+        </aside>
+
+        <!-- Panel Derecho -->
+        <div class="panel-derecho">
+            <header class="header-desktop">
+                <h1>🗳️ EspeculApp</h1>
+                <p class="subtitle">Simulador de Escenarios Electorales de Ciudad Futura</p>
+                <div id="eleccion-info-desktop"></div>
+            </header>
+
+            <main>
+                <section class="controles-generales">
+                    <h2>⚙️ Controles Generales</h2>
+                    <div class="controles-grid">
+                        <div class="control-general">
+                            <label class="switch-container">
+                                <span>Blancos como válidos</span>
+                                <input type="checkbox" id="incluir-blancos" checked>
+                                <span class="switch-slider"></span>
+                            </label>
+                        </div>
+                        <div class="control-general">
+                            <button class="btn-general" id="btn-asistencia-masiva">
+                                📊 Asistencia Masiva
+                            </button>
+                        </div>
+                        <div class="control-general">
+                            <button class="btn-general" id="btn-nulos-masivos">
+                                ❌ Nulos Masivos
+                            </button>
+                        </div>
+                        <div class="control-general">
+                            <button class="btn-general btn-danger" id="btn-resetear-configuracion">
+                                🔄 Resetear Todo
+                            </button>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="grupos-section">
+                    <h2>🗳️ Grupos Electorales</h2>
+                    <div id="grupos-grid" class="grupos-grid"></div>
+                </section>
+            </main>
+
+            <footer class="app-footer">
+                <p>EspeculApp v1.0.0 - Ciudad Futura | Santa Fe, Argentina</p>
+            </footer>
+        </div>
+    </div>
+
+    <!-- Modales -->
+    <div id="modal-dialogo" class="modal">
+        <div class="modal-content">
+            <h3 id="modal-dialogo-titulo">Confirmación</h3>
+            <p id="modal-dialogo-mensaje">¿Estás seguro?</p>
+            <div class="modal-buttons">
+                <button id="modal-dialogo-btn-cancelar" class="btn-modal-cancel">Cancelar</button>
+                <button id="modal-dialogo-btn-aceptar" class="btn-modal-apply">Aceptar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-asistencia" class="modal">
+        <div class="modal-content">
+            <span class="close" data-modal="modal-asistencia">&times;</span>
+            <h3>📊 Aplicar Asistencia Global</h3>
+            <p>Aplicar el mismo porcentaje de asistencia a todos los grupos de simulación</p>
+            <div class="modal-input-group">
+                <label for="input-asistencia-global">Porcentaje de Asistencia:</label>
+                <input type="number" id="input-asistencia-global" min="0" max="100" step="0.1" value="75">
+                <button id="btn-promedio-asistencia" class="btn-promedio" disabled>
+                    📈 Usar Promedio Real
+                </button>
+            </div>
+            <div class="modal-buttons">
+                <button class="btn-modal-cancel" data-modal="modal-asistencia">Cancelar</button>
+                <button id="btn-aplicar-asistencia" class="btn-modal-apply">Aplicar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-nulos" class="modal">
+        <div class="modal-content">
+            <span class="close" data-modal="modal-nulos">&times;</span>
+            <h3>❌ Aplicar Nulos Global</h3>
+            <p>Aplicar el mismo porcentaje de votos nulos a todos los grupos de simulación</p>
+            <div class="modal-input-group">
+                <label for="input-nulos-global">Porcentaje de Nulos:</label>
+                <input type="number" id="input-nulos-global" min="0" max="100" step="0.1" value="2">
+                <button id="btn-promedio-nulos" class="btn-promedio" disabled>
+                    📈 Usar Promedio Real
+                </button>
+            </div>
+            <div class="modal-buttons">
+                <button class="btn-modal-cancel" data-modal="modal-nulos">Cancelar</button>
+                <button id="btn-aplicar-nulos" class="btn-modal-apply">Aplicar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cargar la librería EspeculApp -->
+    <script src="app.js"></script>
+
+    <!-- Script de demostración -->
+    <script>
+        // Funciones para controlar la librería desde la página de demostración
+        
+        function actualizarEstado(mensaje, tipo = 'info') {
+            const statusDiv = document.getElementById('status');
+            const clases = {
+                'ok': 'status-ok',
+                'error': 'status-error',
+                'info': 'status-info'
+            };
+            
+            const iconos = {
+                'ok': '✅',
+                'error': '❌',
+                'info': 'ℹ️'
+            };
+            
+            statusDiv.innerHTML = `<span class="${clases[tipo]}">${iconos[tipo]} ${mensaje}</span>`;
+        }
+        
+        function verificarEstado() {
+            const estaLista = EspeculApp.isReady();
+            if (estaLista) {
+                actualizarEstado('La aplicación está inicializada y lista para usar', 'ok');
+            } else {
+                actualizarEstado('La aplicación NO está inicializada', 'error');
+            }
+        }
+        
+        function obtenerVersion() {
+            const version = EspeculApp.version;
+            actualizarEstado(`Versión de EspeculApp: ${version}`, 'info');
+        }
+        
+        async function reiniciarApp() {
+            try {
+                actualizarEstado('Destruyendo instancia actual...', 'info');
+                EspeculApp.destroy();
+                
+                await new Promise(resolve => setTimeout(resolve, 500));
+                
+                actualizarEstado('Reinicializando aplicación...', 'info');
+                await EspeculApp.init();
+                
+                actualizarEstado('Aplicación reiniciada correctamente', 'ok');
+            } catch (error) {
+                actualizarEstado(`Error al reiniciar: ${error.message}`, 'error');
+            }
+        }
+        
+        function destruirApp() {
+            try {
+                EspeculApp.destroy();
+                actualizarEstado('Aplicación destruida. Los recursos han sido liberados.', 'ok');
+            } catch (error) {
+                actualizarEstado(`Error al destruir: ${error.message}`, 'error');
+            }
+        }
+        
+        async function inicializarApp() {
+            try {
+                actualizarEstado('Inicializando aplicación...', 'info');
+                await EspeculApp.init();
+                actualizarEstado('Aplicación inicializada correctamente', 'ok');
+            } catch (error) {
+                actualizarEstado(`Error al inicializar: ${error.message}`, 'error');
+            }
+        }
+        
+        // Mostrar estado inicial cuando la página carga
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                verificarEstado();
+            }, 1000);
+        });
+        
+        // Interceptar mensajes de console.log de EspeculApp
+        const originalLog = console.log;
+        console.log = function(...args) {
+            if (args[0] && typeof args[0] === 'string' && args[0].includes('EspeculApp')) {
+                actualizarEstado(args[0], 'info');
+            }
+            originalLog.apply(console, args);
+        };
+    </script>
+</body>
+</html>
