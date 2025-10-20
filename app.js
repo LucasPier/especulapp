@@ -1160,6 +1160,9 @@ const EspeculApp = (function() {
     
     // Aplicar gradiente: color hasta el valor, gris después
     input.style.background = `linear-gradient(to right, ${colorFinal} 0%, ${colorFinal} ${porcentaje}%, #ddd ${porcentaje}%, #ddd 100%)`;
+    
+    // Establecer variable CSS para el color del thumb (círculo)
+    input.style.setProperty('--thumb-color', colorFinal);
 }
 
 // Actualizar todos los colores de range inputs en un grupo

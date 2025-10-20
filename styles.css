@@ -422,7 +422,6 @@ section h2 {
 }
 
 .grupo-card:hover {
-    transform: translateY(-4px);
     box-shadow: var(--shadow-hover);
 }
 
@@ -469,7 +468,6 @@ section h2 {
 
 .escenario-btn:hover {
     border-color: var(--accent-color);
-    transform: translateY(-2px);
 }
 
 .escenario-btn.active {
@@ -478,9 +476,6 @@ section h2 {
     border-color: #669dea;
 }
 
-.escenario-btn:active {
-    transform: translateY(0);
-}
 
 /* Controles del Grupo */
 .grupo-controles {
@@ -548,13 +543,13 @@ input[type="range"]::-webkit-slider-thumb {
     width: 20px;
     height: 20px;
     border-radius: 50%;
-    background: var(--accent-color);
+    background: var(--thumb-color, var(--accent-color));
     cursor: pointer;
-    transition: background 0.3s;
+    transition: background 0.3s, transform 0.3s;
 }
 
 input[type="range"]::-webkit-slider-thumb:hover {
-    background: #2980b9;
+    filter: brightness(0.9);
     transform: scale(1.1);
 }
 
@@ -562,7 +557,7 @@ input[type="range"]::-moz-range-thumb {
     width: 20px;
     height: 20px;
     border-radius: 50%;
-    background: var(--accent-color);
+    background: var(--thumb-color, var(--accent-color));
     cursor: pointer;
     border: none;
 }
@@ -710,13 +705,10 @@ input:checked + .slider:before {
 }
 
 .btn-control-masivo:hover {
-    transform: translateY(-2px);
+    background: linear-gradient(135deg, #4e87d8 0%, #357186 100%);
     box-shadow: var(--shadow-hover);
 }
 
-.btn-control-masivo:active {
-    transform: translateY(0);
-}
 
 .btn-control-masivo.btn-reset {
     background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
@@ -835,7 +827,6 @@ input:checked + .slider:before {
 
 .btn-usar-promedio:hover:not(:disabled) {
     background-color: #e67e22;
-    transform: translateY(-1px);
     box-shadow: 0 2px 8px rgba(243, 156, 18, 0.3);
 }
 
@@ -869,6 +860,7 @@ input:checked + .slider:before {
 
 .btn-modal-cancel:hover {
     background-color: #7f8c8d;
+    box-shadow: var(--shadow);
 }
 
 .btn-modal-apply {
@@ -877,7 +869,7 @@ input:checked + .slider:before {
 }
 
 .btn-modal-apply:hover {
-    transform: translateY(-2px);
+    background: linear-gradient(135deg, rgb(65, 122, 202) 0%, #3c798f 100%);
     box-shadow: var(--shadow);
 }
 
