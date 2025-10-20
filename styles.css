@@ -79,7 +79,8 @@ header {
 @media (min-width: 1200px) {
     .header-desktop {
         display: flex;
-        /* border-radius: 0 20px 0 0; */ /* Redondear solo la esquina superior derecha */
+        margin-right: -8px; /* Extender por debajo de la scrollbar */
+        padding-right: 48px; /* Compensar: 40px original + 8px de scrollbar */
     }
 }
 
@@ -104,28 +105,21 @@ header {
 header h1 {
     color: #d1e1f1;
     font-size: 1.8em;
-    margin-bottom: 8px;
+    margin-bottom: 0;
     font-weight: 700;
 }
 
-@media (min-width: 768px) {
+/*@media (min-width: 768px) {
     header h1 {
         margin-bottom: 0;
     }
-}
+}*/
 
 .subtitle {
     font-size: 1em;
     opacity: 0.7;
     /* font-weight: 500; */
-    margin-bottom: 8px;
-}
-
-@media (min-width: 768px) {
-    .subtitle {
-        /* font-size: 1.2em; */
-        margin-bottom: 0;
-    }
+    /*margin-bottom: 8px;*/
 }
 
 #eleccion-info,
@@ -134,16 +128,23 @@ header h1 {
     font-size: 0.85em;
     opacity: 0.85;
     font-weight: 500;
-    margin-top: 8px;
 }
 
-@media (min-width: 768px) {
+.timestamp-actualizacion {
+    font-size: 0.75em;
+    opacity: 0.7;
+    margin-top: 4px;
+    font-style: italic;
+    /*margin-top: 8px;*/
+}
+
+/*@media (min-width: 768px) {
     #eleccion-info,
     #eleccion-info-mobile,
     #eleccion-info-desktop {
         margin-top: 0;
     }
-}
+}*/
 
 /* Main Content */
 main {
@@ -157,6 +158,7 @@ main {
     }
 
     .panel-izquierdo {
+        position: relative;
         width: 480px;
         min-width: 480px; /* Asegurar ancho mínimo para que los frentes no se partan en 2 líneas */
         flex-shrink: 0;
@@ -164,17 +166,17 @@ main {
         overflow: hidden; /* Sin scroll en el panel, solo en el contenido interno */
         padding: 0; /* Sin padding para ganar espacio */
         background-color: var(--background-color);
+        box-shadow: 0 0 22px #0000001f;
     }
 
     .panel-derecho {
         flex: 1;
         height: 95vh;
         overflow-y: auto;
+        overflow-y: overlay; /* Para que el scrollbar se superponga al contenido */
+        overflow-x: hidden;
         display: flex;
         flex-direction: column;
-        /* Estilos de scrollbar personalizados */
-        scrollbar-width: thin;
-        scrollbar-color: #669dea #ecf0f1;
     }
 
     .panel-derecho::-webkit-scrollbar {
@@ -182,8 +184,7 @@ main {
     }
 
     .panel-derecho::-webkit-scrollbar-track {
-        background: #ecf0f1;
-        border-radius: 4px;
+        background: transparent;
     }
 
     .panel-derecho::-webkit-scrollbar-thumb {
@@ -202,10 +203,14 @@ main {
     .panel-derecho main {
         flex: 1;
         padding: 40px;
+        margin-right: -8px; /* Extender por debajo de la scrollbar */
+        padding-right: 48px; /* Compensar: 40px original + 8px de scrollbar */
     }
 
     .panel-derecho footer {
         flex-shrink: 0;
+        margin-right: -8px; /* Extender por debajo de la scrollbar */
+        padding-right: 28px; /* Compensar: 20px original + 8px de scrollbar */
     }
 }
 
@@ -263,9 +268,12 @@ section h2 {
         flex-direction: column;
         border-radius: 20px 0 0 20px; /* Redondear solo los bordes izquierdos */
         overflow-y: auto; /* El scroll ahora está en resultados-globales para incluir todo */
-        /* Estilos de scrollbar personalizados */
-        scrollbar-width: thin;
-        scrollbar-color: #669dea #ecf0f1;
+        overflow-y: overlay; /* Para que el scrollbar se superponga al contenido */
+        /* Estilos de scrollbar personalizados - track transparente, thumb sólido */
+        /*scrollbar-width: thin;*/
+        /*scrollbar-color: #669dea transparent;*/
+        /* Ajustar padding para extender contenido por debajo de scrollbar */
+        padding: 30px 38px 30px 30px; /* 30px original + 8px de scrollbar en el derecho */
     }
 
     .resultados-globales::-webkit-scrollbar {
@@ -273,8 +281,7 @@ section h2 {
     }
 
     .resultados-globales::-webkit-scrollbar-track {
-        background: #ecf0f1;
-        border-radius: 4px;
+        background: transparent;
     }
 
     .resultados-globales::-webkit-scrollbar-thumb {
@@ -311,18 +318,20 @@ section h2 {
 .stat-box {
     flex: 1;
     min-width: 180px;
-    background: linear-gradient(135deg, #669dea 0%, #4b8ba2 100%);
+    background-color: #66768d1f;
+    border: 1px solid #66768d26;
     padding: 13px;
     border-radius: 10px;
     text-align: center;
-    color: white;
-    box-shadow: var(--shadow);
+    color: var(--primary-color);
+    box-shadow: none;
 }
 
 .stat-label {
     display: block;
     font-size: 0.9em;
-    opacity: 0.9;
+    opacity: 0.75;
+    font-weight: 500;
     /* margin-bottom: 8px; */
 }
 
@@ -330,6 +339,7 @@ section h2 {
     display: block;
     font-size: 1.3em;
     font-weight: 700;
+    color: var(--primary-color);
 }
 
 /* Gráfico de Barras */
@@ -358,6 +368,7 @@ section h2 {
 .frente-porcentaje {
     font-weight: 700;
     font-size: 1.3em;
+    color: var(--primary-color);
 }
 
 .frente-votos {
@@ -611,18 +622,18 @@ input[type="number"]:focus {
 .control-switch-container {
     display: flex;
     justify-content: center;
-    padding: 15px;
+    padding: 12px;
     background-color: #f8f9fa;
-    border-radius: 10px;
+    border-radius: 8px;
 }
 
 .switch-label {
     display: flex;
     align-items: center;
-    gap: 15px;
+    gap: 12px;
     cursor: pointer;
-    font-size: 1.1em;
-    font-weight: 600;
+    font-size: 0.95em;
+    font-weight: 500;
 }
 
 .switch-text {
@@ -633,8 +644,8 @@ input[type="number"]:focus {
 .switch {
     position: relative;
     display: inline-block;
-    width: 60px;
-    height: 34px;
+    width: 48px;
+    height: 26px;
 }
 
 .switch input {
@@ -652,16 +663,16 @@ input[type="number"]:focus {
     bottom: 0;
     background-color: #ccc;
     transition: 0.4s;
-    border-radius: 34px;
+    border-radius: 26px;
 }
 
 .slider:before {
     position: absolute;
     content: "";
-    height: 26px;
-    width: 26px;
-    left: 4px;
-    bottom: 4px;
+    height: 20px;
+    width: 20px;
+    left: 3px;
+    bottom: 3px;
     background-color: white;
     transition: 0.4s;
     border-radius: 50%;
@@ -672,7 +683,7 @@ input:checked + .slider {
 }
 
 input:checked + .slider:before {
-    transform: translateX(26px);
+    transform: translateX(22px);
 }
 
 /* Controles Masivos */
@@ -685,14 +696,14 @@ input:checked + .slider:before {
 
 .btn-control-masivo {
     flex: 1;
-    min-width: 250px;
-    padding: 15px 25px;
+    min-width: 220px;
+    padding: 12px 20px;
     background: linear-gradient(135deg, #669dea 0%, #4b8ba2 100%);
     color: white;
     border: none;
-    border-radius: 10px;
-    font-size: 1em;
-    font-weight: 600;
+    border-radius: 8px;
+    font-size: 0.95em;
+    font-weight: 500;
     cursor: pointer;
     transition: all 0.3s ease;
     box-shadow: var(--shadow);
@@ -934,9 +945,9 @@ footer {
         padding: 20px;
     }
 
-    header h1 {
+    /*header h1 {
         font-size: 2em;
-    }
+    }*/
 
     .grupos-grid {
         grid-template-columns: 1fr;

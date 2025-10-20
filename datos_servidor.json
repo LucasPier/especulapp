@@ -1,21 +1,21 @@
 {
-  "timestamp": "2025-10-19T14:30:00Z",
-  "actualizacion": "Última actualización: 14:30hs",
+  "timestamp": "2025-10-20T05:16:00Z",
+  "actualizacion": "Última actualización: 05:16hs",
   "grupos_con_datos": [
     {
       "id": "grupo_1",
       "electores": 820000,
-      "asistentes": 615000,
-      "nulos": 12300,
-      "blancos": 18450,
-      "votosValidos": 584250,
+      "asistentes": 650000,
+      "nulos": 13000,
+      "blancos": 19500,
+      "votosValidos": 617500,
       "frentes": {
-        "frente_1": 245790,
-        "frente_2": 175275,
-        "frente_3": 128393,
-        "otros": 34792
+        "frente_1": 300000,
+        "frente_2": 200000,
+        "frente_3": 90000,
+        "otros": 27500
       },
-      "porcentaje_escrutado": 78.5
+      "porcentaje_escrutado": 92.8
     },
     {
       "id": "grupo_3",

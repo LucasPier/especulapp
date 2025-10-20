@@ -1,7 +1,7 @@
 {
   "eleccion": {
     "nombre": "Diputados Nacionales Santa Fe",
-    "fecha": "OCT2025",
+    "fecha": "OCT 2025",
     "esLegislativa": true,
     "cantidadCargos": 9,
     "nombreCargoSingularF": "diputada",

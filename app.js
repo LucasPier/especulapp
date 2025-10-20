@@ -295,9 +295,21 @@ const EspeculApp = (function() {
 // Cargar datos reales desde el servidor (simula consulta a API)
     async function cargarDatosServidor() {
     try {
-        const respuesta = await fetch('datos_servidor.json');
-        datosServidor = await respuesta.json();
+        // Agregar cache-busting para evitar caché del navegador
+        const timestamp = new Date().getTime();
+        const respuesta = await fetch(`datos_servidor.json?t=${timestamp}`, {
+            cache: 'no-store',
+            headers: {
+                'Cache-Control': 'no-cache, no-store, must-revalidate',
+                'Pragma': 'no-cache'
+            }
+        });
+        
+        const nuevosDatos = await respuesta.json();
         ultimaConsulta = new Date();
+        
+        // Actualizar datos del servidor
+        datosServidor = nuevosDatos;
         
         // Actualizar conjunto de grupos con datos reales
         gruposConDatosReales.clear();
@@ -307,13 +319,15 @@ const EspeculApp = (function() {
             });
         }
         
-        // Actualizar UI solo si ya está inicializada (no en la primera carga)
-        if (configGrupos && Object.keys(estadoGrupos).length > 0) {
+        // Actualizar UI si ya está inicializada
+        const uiInicializada = configGrupos && document.getElementById('grupos-grid');
+        if (uiInicializada) {
             renderizarUI();
             calcularYActualizarResultados();
             configurarBotonesPromedio(); // Actualizar estado de botones de promedio
         }
     } catch (error) {
+        console.warn('⚠️ Error al cargar datos del servidor:', error);
         // No mostrar alerta, puede ser que aún no haya datos disponibles
     }
 }
@@ -325,12 +339,12 @@ const EspeculApp = (function() {
         clearInterval(intervaloPolleoId);
     }
     
-    // Consultar cada 60 segundos (solo si la página está visible)
+    // Consultar cada 60 segundos
     intervaloPolleoId = setInterval(async () => {
         if (!document.hidden) {
             await cargarDatosServidor();
         }
-    }, 60000); // 60 segundos
+    }, 60000);
 }
 
 // Detectar cuando el usuario vuelve a la aplicación
@@ -365,6 +379,7 @@ const EspeculApp = (function() {
             estadoGrupos[grupo.id] = {
                 asistencia: 75, // 75% por defecto
                 votosNulos: 2, // 2% por defecto
+                votosBlancos: 0, // Inicializar en 0, se actualizará con aplicarEscenario
                 frentes: {},
                 escenarioActivo: primerEscenario.id // Primer escenario activo por defecto
             };
@@ -562,7 +577,10 @@ const EspeculApp = (function() {
 // Nueva función para actualizar una tarjeta sin recrearla
     function actualizarTarjetaGrupo(grupo) {
     const card = document.getElementById(`grupo-${grupo.id}`);
-    if (!card) return;
+    if (!card) {
+        console.warn(`⚠️ Tarjeta ${grupo.id} no encontrada en el DOM`);
+        return;
+    }
     
     const tienesDatosReales = gruposConDatosReales.has(grupo.id);
     const esActualmenteDatosReales = card.querySelector('.badge-datos-reales') !== null;
@@ -578,13 +596,14 @@ const EspeculApp = (function() {
     if (tienesDatosReales) {
         actualizarTarjetaDatosReales(card, grupo);
     }
-    // Si es simulación, no hacer nada (ya se actualiza con los event listeners)
 }
 
 // Nueva función para actualizar tarjeta con datos reales sin recrearla
     function actualizarTarjetaDatosReales(card, grupo) {
     const datosGrupo = datosServidor.grupos_con_datos.find(g => g.id === grupo.id);
-    if (!datosGrupo) return;
+    if (!datosGrupo) {
+        return;
+    }
     
     // Actualizar porcentaje de escrutinio y participación
     const infoEscrutinio = card.querySelector('.grupo-info-escrutinio');
@@ -658,25 +677,9 @@ const EspeculApp = (function() {
             return b.porcentaje - a.porcentaje;
         });
         
-        // Verificar si la estructura cambió (número de barras o tipo de barra)
-        const barrasExistentes = graficoBarras.children;
-        let necesitaReconstruir = barrasExistentes.length !== resultados.length;
-        
-        if (!necesitaReconstruir) {
-            // Verificar si algún elemento cambió de tipo (con barra vs sin barra)
-            for (let i = 0; i < resultados.length; i++) {
-                const barraExistente = barrasExistentes[i];
-                const tieneBarraFill = barraExistente.querySelector('.barra-progreso-mini') !== null;
-                if ((resultados[i].esBarra && !tieneBarraFill) || (!resultados[i].esBarra && tieneBarraFill)) {
-                    necesitaReconstruir = true;
-                    break;
-                }
-            }
-        }
-        
-        if (necesitaReconstruir) {
-            // Recrear todo el gráfico
-            let graficoHTML = '';
+        // SIEMPRE reconstruir el gráfico para evitar problemas de orden
+        // (los porcentajes cambian → el orden de resultados cambia → no coincide con DOM)
+        let graficoHTML = '';
             resultados.forEach(resultado => {
                 if (resultado.esBarra === false) {
                     graficoHTML += `
@@ -716,31 +719,18 @@ const EspeculApp = (function() {
                 }
             });
             graficoBarras.innerHTML = graficoHTML;
-        } else {
-            // Solo actualizar valores existentes
-            resultados.forEach((resultado, index) => {
-                const barraExistente = barrasExistentes[index];
-                
-                if (barraExistente) {
-                    // Actualizar valores de la barra existente
-                    const porcentajeSpan = barraExistente.querySelector('.frente-porcentaje-mini');
-                    const votosSpan = barraExistente.querySelector('.frente-votos-mini');
-                    const barraFill = barraExistente.querySelector('.barra-fill');
-                    
-                    if (porcentajeSpan) porcentajeSpan.textContent = `${formatearPorcentaje(resultado.porcentaje)}%`;
-                    if (votosSpan) votosSpan.textContent = `(${formatearNumero(resultado.votos)})`;
-                    if (barraFill) barraFill.style.width = `${resultado.porcentaje}%`;
-                }
-            });
-        }
     }
     
     // Actualizar datos adicionales
     const datosAdicionales = card.querySelector('.datos-adicionales');
     if (datosAdicionales) {
         const datoItems = datosAdicionales.querySelectorAll('.dato-value');
-        if (datoItems[0]) datoItems[0].textContent = formatearNumero(datosGrupo.asistentes);
-        if (datoItems[1]) datoItems[1].textContent = formatearNumero(datosGrupo.votosValidos);
+        if (datoItems[0]) {
+            datoItems[0].textContent = formatearNumero(datosGrupo.asistentes);
+        }
+        if (datoItems[1]) {
+            datoItems[1].textContent = formatearNumero(datosGrupo.votosValidos);
+        }
     }
 }
 
@@ -904,12 +894,47 @@ const EspeculApp = (function() {
 // Renderizar grupo con controles de simulación
     function renderizarGrupoSimulacion(card, grupo) {
     const estado = estadoGrupos[grupo.id];
+    
+    // Verificar que el estado exista - si no, intentar inicializarlo ahora
+    if (!estado) {
+        console.warn(`Estado no encontrado para ${grupo.id}, inicializando...`);
+        
+        // Inicializar el estado ahora mismo
+        const primerEscenario = configEleccion.eleccion.escenarios[0];
+        estadoGrupos[grupo.id] = {
+            asistencia: 75,
+            votosNulos: 2,
+            votosBlancos: 0,
+            frentes: {},
+            escenarioActivo: primerEscenario.id
+        };
+        aplicarEscenario(grupo.id, primerEscenario.id);
+        
+        // Ahora usar el estado recién creado
+        const estadoNuevo = estadoGrupos[grupo.id];
+        if (!estadoNuevo) {
+            // Si aún no existe, mostrar error
+            card.innerHTML = `
+                <div class="grupo-header">
+                    <div class="grupo-nombre">
+                        ${grupo.nombre}
+                        <span class="badge-simulacion" style="background-color: #e74c3c;">⚠️ ERROR</span>
+                    </div>
+                    <div style="padding: 20px; color: #e74c3c;">
+                        ❌ Error al inicializar estado
+                    </div>
+                </div>
+            `;
+            return;
+        }
+    }
 
+    const estadoFinal = estadoGrupos[grupo.id];
     let controlesHTML = '';
 
     // Controles para cada frente
     configEleccion.eleccion.frentes.forEach(frente => {
-        const valorInicial = estado.frentes[frente.id] || 0;
+        const valorInicial = estadoFinal.frentes[frente.id] || 0;
         controlesHTML += `
             <div class="control-item">
                 <div class="control-label">
@@ -944,7 +969,7 @@ const EspeculApp = (function() {
             <input type="range" 
                    min="0" 
                    max="100" 
-                   value="${estado.votosBlancos}"
+                   value="${estadoFinal.votosBlancos}"
                    data-grupo="${grupo.id}"
                    data-tipo="blancos"
                    data-color="#95a5a6"
@@ -957,13 +982,13 @@ const EspeculApp = (function() {
         <div class="control-item">
             <div class="control-label">
                 <span>❌ Votos Nulos (%)</span>
-                <span class="control-value" id="valor-${grupo.id}-nulos">${estado.votosNulos}%</span>
+                <span class="control-value" id="valor-${grupo.id}-nulos">${estadoFinal.votosNulos}%</span>
             </div>
             <input type="range" 
                    min="0" 
                    max="100" 
                    step="0.1"
-                   value="${estado.votosNulos}"
+                   value="${estadoFinal.votosNulos}"
                    data-grupo="${grupo.id}"
                    data-tipo="nulos"
                    class="range-nulos">
@@ -971,13 +996,13 @@ const EspeculApp = (function() {
         <div class="control-item">
             <div class="control-label">
                 <span>📊 Asistencia (%)</span>
-                <span class="control-value" id="valor-${grupo.id}-asistencia">${estado.asistencia}%</span>
+                <span class="control-value" id="valor-${grupo.id}-asistencia">${estadoFinal.asistencia}%</span>
             </div>
             <input type="range" 
                    min="0" 
                    max="100" 
                    step="0.1"
-                   value="${estado.asistencia}"
+                   value="${estadoFinal.asistencia}"
                    data-grupo="${grupo.id}"
                    data-tipo="asistencia"
                    class="range-asistencia">
@@ -987,7 +1012,7 @@ const EspeculApp = (function() {
     // Crear botonera de escenarios
     let botoneraHTML = '<div class="escenarios-botonera">';
     configEleccion.eleccion.escenarios.forEach(escenario => {
-        const isActive = estado.escenarioActivo === escenario.id ? 'active' : '';
+        const isActive = estadoFinal.escenarioActivo === escenario.id ? 'active' : '';
         botoneraHTML += `
             <button class="escenario-btn ${isActive}" 
                     data-grupo="${grupo.id}" 
