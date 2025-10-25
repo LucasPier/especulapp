@@ -777,48 +777,8 @@ async function cambiarConfiguracionGrupos(configId) {
             return b.porcentaje - a.porcentaje;
         });
         
-        // SIEMPRE reconstruir el gráfico para evitar problemas de orden
-        // (los porcentajes cambian → el orden de resultados cambia → no coincide con DOM)
-        let graficoHTML = '';
-            resultados.forEach(resultado => {
-                if (resultado.esBarra === false) {
-                    graficoHTML += `
-                        <div class="barra-contenedor-mini">
-                            <div class="barra-info-mini">
-                                <span class="frente-nombre-mini">
-                                    ${obtenerIndicadorVisual(resultado)}
-                                    ${resultado.nombre}
-                                </span>
-                                <span>
-                                    <span class="frente-porcentaje-mini">${formatearPorcentaje(resultado.porcentaje)}%</span>
-                                    <span class="frente-votos-mini">(${formatearNumero(resultado.votos)})</span>
-                                </span>
-                            </div>
-                        </div>
-                    `;
-                } else {
-                    graficoHTML += `
-                        <div class="barra-contenedor-mini">
-                            <div class="barra-info-mini">
-                                <span class="frente-nombre-mini">
-                                    ${obtenerIndicadorVisual(resultado)}
-                                    ${resultado.nombre}
-                                </span>
-                                <span>
-                                    <span class="frente-porcentaje-mini">${formatearPorcentaje(resultado.porcentaje)}%</span>
-                                    <span class="frente-votos-mini">(${formatearNumero(resultado.votos)})</span>
-                                </span>
-                            </div>
-                            <div class="barra-progreso-mini">
-                                <div class="barra-fill" 
-                                     style="width: ${resultado.porcentaje}%; background-color: ${resultado.color}">
-                                </div>
-                            </div>
-                        </div>
-                    `;
-                }
-            });
-            graficoBarras.innerHTML = graficoHTML;
+        // Usar sistema de orden dinámico sin recrear DOM
+        renderizarGraficoMini(graficoBarras, resultados);
     }
     
     // Actualizar datos adicionales
@@ -916,48 +876,6 @@ async function cambiarConfiguracionGrupos(configId) {
         return b.porcentaje - a.porcentaje;
     });
     
-    // Generar HTML del gráfico
-    let graficoHTML = '<div class="grupo-grafico-barras">';
-    resultados.forEach(resultado => {
-        if (resultado.esBarra === false) {
-            graficoHTML += `
-                <div class="barra-contenedor-mini">
-                    <div class="barra-info-mini">
-                        <span class="frente-nombre-mini">
-                            ${obtenerIndicadorVisual(resultado)}
-                            ${resultado.nombre}
-                        </span>
-                        <span>
-                            <span class="frente-porcentaje-mini">${formatearPorcentaje(resultado.porcentaje)}%</span>
-                            <span class="frente-votos-mini">(${formatearNumero(resultado.votos)})</span>
-                        </span>
-                    </div>
-                </div>
-            `;
-        } else {
-            graficoHTML += `
-                <div class="barra-contenedor-mini">
-                    <div class="barra-info-mini">
-                        <span class="frente-nombre-mini">
-                            ${obtenerIndicadorVisual(resultado)}
-                            ${resultado.nombre}
-                        </span>
-                        <span>
-                            <span class="frente-porcentaje-mini">${formatearPorcentaje(resultado.porcentaje)}%</span>
-                            <span class="frente-votos-mini">(${formatearNumero(resultado.votos)})</span>
-                        </span>
-                    </div>
-                    <div class="barra-progreso-mini">
-                        <div class="barra-fill" 
-                             style="width: ${resultado.porcentaje}%; background-color: ${resultado.color}">
-                        </div>
-                    </div>
-                </div>
-            `;
-        }
-    });
-    graficoHTML += '</div>';
-    
     const participacion = datosGrupo.electores > 0 
         ? formatearPorcentaje(datosGrupo.asistentes / datosGrupo.electores * 100)
         : '0,00';
@@ -976,7 +894,7 @@ async function cambiarConfiguracionGrupos(configId) {
             </div>
         </div>
         <div class="grupo-datos-reales">
-            ${graficoHTML}
+            <div class="grupo-grafico-barras"></div>
             <div class="datos-adicionales">
                 <div class="dato-item">
                     <span class="dato-label">Asistentes:</span>
@@ -989,6 +907,12 @@ async function cambiarConfiguracionGrupos(configId) {
             </div>
         </div>
     `;
+    
+    // Renderizar el gráfico usando la función de animación
+    const graficoBarras = card.querySelector('.grupo-grafico-barras');
+    if (graficoBarras) {
+        renderizarGraficoMini(graficoBarras, resultados);
+    }
 }
 
 // Renderizar grupo con controles de simulación
@@ -997,8 +921,6 @@ async function cambiarConfiguracionGrupos(configId) {
     
     // Verificar que el estado exista - si no, intentar inicializarlo ahora
     if (!estado) {
-        console.warn(`Estado no encontrado para ${grupo.id}, inicializando...`);
-        
         // Inicializar el estado ahora mismo
         const primerEscenario = configEleccion.eleccion.escenarios[0];
         estadoGrupos[grupo.id] = {
@@ -1141,8 +1063,9 @@ async function cambiarConfiguracionGrupos(configId) {
     // Agregar event listeners
     agregarEventListeners(card, grupo.id);
     
-    // Actualizar labels con porcentajes normalizados
+    // Actualizar labels con porcentajes normalizados y sincronizar inputs
     setTimeout(() => {
+        sincronizarInputsConEstado(grupo.id);
         actualizarLabelsGrupo(grupo.id);
         actualizarColoresRangeGrupo(grupo.id);
     }, 0);
@@ -1285,6 +1208,7 @@ async function cambiarConfiguracionGrupos(configId) {
     function actualizarInputsGrupo(grupoId) {
     const estado = estadoGrupos[grupoId];
     const card = document.getElementById(`grupo-${grupoId}`);
+    if (!card) return;
     
     // Actualizar ranges de frentes
     configEleccion.eleccion.frentes.forEach(frente => {
@@ -1299,6 +1223,37 @@ async function cambiarConfiguracionGrupos(configId) {
     if (inputBlancos) {
         inputBlancos.value = estado.votosBlancos;
     }
+    
+    // Actualizar range de nulos
+    const inputNulos = card.querySelector(`input[data-tipo="nulos"]`);
+    if (inputNulos) {
+        inputNulos.value = estado.votosNulos;
+    }
+    
+    // Actualizar range de asistencia
+    const inputAsistencia = card.querySelector(`input[data-tipo="asistencia"]`);
+    if (inputAsistencia) {
+        inputAsistencia.value = estado.asistencia;
+    }
+}
+
+// Sincronizar inputs con el estado al cargar (incluyendo botonera de escenarios)
+function sincronizarInputsConEstado(grupoId) {
+    const estado = estadoGrupos[grupoId];
+    const card = document.getElementById(`grupo-${grupoId}`);
+    if (!card || !estado) return;
+    
+    // Actualizar todos los inputs range
+    actualizarInputsGrupo(grupoId);
+    
+    // Actualizar botonera de escenarios
+    card.querySelectorAll('.escenario-btn').forEach(btn => {
+        if (btn.dataset.escenario === estado.escenarioActivo) {
+            btn.classList.add('active');
+        } else {
+            btn.classList.remove('active');
+        }
+    });
 }
 
 // Deseleccionar escenario activo
@@ -1669,42 +1624,118 @@ async function cambiarConfiguracionGrupos(configId) {
     const contenedor = document.getElementById('grafico-resultados');
     const barrasExistentes = contenedor.querySelectorAll('.barra-contenedor');
     
-    let necesitaReconstruir = false;
+    // Crear un mapa de barras existentes por ID con sus posiciones actuales
+    const mapaBarrasExistentes = new Map();
+    const posicionesAnteriores = new Map();
     
-    // Verificar si el número de barras cambió
-    if (barrasExistentes.length !== resultados.length) {
-        necesitaReconstruir = true;
-    } else {
-        // Verificar si alguna barra cambió de ID (orden diferente) o de tipo
-        for (let i = 0; i < resultados.length; i++) {
-            const barraExistente = barrasExistentes[i];
-            const idExistente = barraExistente.dataset.resultadoId;
-            const idNuevo = resultados[i].id;
-            const tieneBarraProgreso = barraExistente.querySelector('.barra-progreso') !== null;
-            const deberaTenerBarra = resultados[i].esBarra !== false;
+    barrasExistentes.forEach((barra, index) => {
+        const id = barra.dataset.resultadoId;
+        mapaBarrasExistentes.set(id, barra);
+        // Guardar posición actual (índice en el DOM)
+        posicionesAnteriores.set(id, index);
+    });
+    
+    // Verificar si necesitamos crear o eliminar barras
+    const idsExistentes = new Set(mapaBarrasExistentes.keys());
+    const idsNuevos = new Set(resultados.map(r => r.id));
+    
+    // Eliminar barras que ya no existen
+    idsExistentes.forEach(id => {
+        if (!idsNuevos.has(id)) {
+            const barra = mapaBarrasExistentes.get(id);
+            barra.remove();
+            mapaBarrasExistentes.delete(id);
+            posicionesAnteriores.delete(id);
+        }
+    });
+    
+    // Preparar datos para animación
+    const barrasParaAnimar = [];
+    
+    // Procesar cada resultado en el orden correcto
+    resultados.forEach((resultado, nuevoIndex) => {
+        let barraDiv = mapaBarrasExistentes.get(resultado.id);
+        const esNueva = !barraDiv;
+        
+        if (esNueva) {
+            // Crear nueva barra (sin agregarla aún al DOM)
+            barraDiv = crearBarraHTML(resultado);
+            mapaBarrasExistentes.set(resultado.id, barraDiv);
+        } else {
+            // Verificar si cambió el tipo (con/sin barra de progreso)
+            const tieneBarraProgreso = barraDiv.querySelector('.barra-progreso') !== null;
+            const deberaTenerBarra = resultado.esBarra !== false;
             
-            // Si cambió el ID (diferente frente en esta posición) o el tipo de barra, reconstruir
-            if (idExistente !== idNuevo || tieneBarraProgreso !== deberaTenerBarra) {
-                necesitaReconstruir = true;
-                break;
+            if (tieneBarraProgreso !== deberaTenerBarra) {
+                // Recrear la barra si cambió el tipo
+                const nuevaBarra = crearBarraHTML(resultado);
+                barraDiv.replaceWith(nuevaBarra);
+                barraDiv = nuevaBarra;
+                mapaBarrasExistentes.set(resultado.id, nuevaBarra);
+            } else {
+                // Actualizar valores existentes
+                actualizarBarraExistente(barraDiv, resultado);
             }
         }
-    }
+        
+        barrasParaAnimar.push({
+            elemento: barraDiv,
+            id: resultado.id,
+            nuevoIndex: nuevoIndex,
+            esNueva: esNueva
+        });
+    });
     
-    if (necesitaReconstruir) {
-        // Recrear todo
-        contenedor.innerHTML = '';
-        resultados.forEach(resultado => {
-            const barraDiv = crearBarraHTML(resultado);
-            contenedor.appendChild(barraDiv);
-        });
-    } else {
-        // Actualizar barras existentes (solo valores numéricos, el orden no cambió)
-        resultados.forEach((resultado, index) => {
-            const barraDiv = barrasExistentes[index];
-            actualizarBarraExistente(barraDiv, resultado);
-        });
-    }
+    // FLIP Animation
+    // Calcular altura de barra para el desplazamiento
+    const primeraBarraExistente = Array.from(barrasExistentes)[0];
+    if (!primeraBarraExistente && barrasParaAnimar.length === 0) return;
+    
+    const alturaBarra = primeraBarraExistente ? primeraBarraExistente.offsetHeight : 60;
+    const gap = 15; // Gap definido en .grafico-barras
+    const alturaTotal = alturaBarra + gap;
+    
+    // Reordenar el DOM y aplicar animación
+    barrasParaAnimar.forEach(({ elemento, id, nuevoIndex, esNueva }) => {
+        const posicionAnterior = posicionesAnteriores.get(id);
+        
+        // Mover o insertar el elemento a su posición correcta en el DOM
+        if (nuevoIndex === 0) {
+            // Insertar al principio
+            if (contenedor.firstChild !== elemento) {
+                contenedor.insertBefore(elemento, contenedor.firstChild);
+            }
+        } else {
+            // Insertar después del elemento anterior
+            const elementoAnterior = barrasParaAnimar[nuevoIndex - 1].elemento;
+            if (elemento.previousElementSibling !== elementoAnterior) {
+                elementoAnterior.insertAdjacentElement('afterend', elemento);
+            }
+        }
+        
+        // Solo animar si no es nueva y cambió de posición
+        if (!esNueva && posicionAnterior !== undefined && posicionAnterior !== nuevoIndex) {
+            // Calcular desplazamiento
+            const desplazamiento = (posicionAnterior - nuevoIndex) * alturaTotal;
+            
+            // Aplicar posición inicial sin transición
+            elemento.style.transition = 'none';
+            elemento.style.transform = `translateY(${desplazamiento}px)`;
+            
+            // Usar requestAnimationFrame para asegurar que el navegador renderiza el estado inicial
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    // Animar a la posición final
+                    elemento.style.transition = 'transform 0.6s ease-in-out';
+                    elemento.style.transform = 'translateY(0)';
+                });
+            });
+        } else {
+            // Nueva barra o misma posición - asegurar que no tenga transform
+            elemento.style.transition = '';
+            elemento.style.transform = '';
+        }
+    });
 }
 
 // Función auxiliar para crear una barra nueva
@@ -1827,6 +1858,183 @@ function obtenerNombreCargoSingular(frenteId) {
             // Remover elemento si ya no tiene cargos
             cargosDiv.remove();
         }
+    }
+}
+
+// Función para renderizar gráfico mini con orden dinámico (para tarjetas de datos reales)
+function renderizarGraficoMini(contenedor, resultados) {
+    const barrasExistentes = contenedor.querySelectorAll('.barra-contenedor-mini');
+    
+    // Crear un mapa de barras existentes por ID con sus posiciones actuales
+    const mapaBarrasExistentes = new Map();
+    const posicionesAnteriores = new Map();
+    
+    barrasExistentes.forEach((barra, index) => {
+        const id = barra.dataset.resultadoId;
+        mapaBarrasExistentes.set(id, barra);
+        // Guardar posición actual (índice en el DOM)
+        posicionesAnteriores.set(id, index);
+    });
+    
+    // Verificar si necesitamos crear o eliminar barras
+    const idsExistentes = new Set(mapaBarrasExistentes.keys());
+    const idsNuevos = new Set(resultados.map(r => r.id));
+    
+    // Eliminar barras que ya no existen
+    idsExistentes.forEach(id => {
+        if (!idsNuevos.has(id)) {
+            const barra = mapaBarrasExistentes.get(id);
+            barra.remove();
+            mapaBarrasExistentes.delete(id);
+            posicionesAnteriores.delete(id);
+        }
+    });
+    
+    // Preparar datos para animación
+    const barrasParaAnimar = [];
+    
+    // Procesar cada resultado en el orden correcto
+    resultados.forEach((resultado, nuevoIndex) => {
+        let barraDiv = mapaBarrasExistentes.get(resultado.id);
+        const esNueva = !barraDiv;
+        
+        if (esNueva) {
+            // Crear nueva barra (sin agregarla aún al DOM)
+            barraDiv = crearBarraMiniHTML(resultado);
+            mapaBarrasExistentes.set(resultado.id, barraDiv);
+        } else {
+            // Verificar si cambió el tipo (con/sin barra de progreso)
+            const tieneBarraProgreso = barraDiv.querySelector('.barra-progreso-mini') !== null;
+            const deberaTenerBarra = resultado.esBarra !== false;
+            
+            if (tieneBarraProgreso !== deberaTenerBarra) {
+                // Recrear la barra si cambió el tipo
+                const nuevaBarra = crearBarraMiniHTML(resultado);
+                barraDiv.replaceWith(nuevaBarra);
+                barraDiv = nuevaBarra;
+                mapaBarrasExistentes.set(resultado.id, nuevaBarra);
+            } else {
+                // Actualizar valores existentes
+                actualizarBarraMiniExistente(barraDiv, resultado);
+            }
+        }
+        
+        barrasParaAnimar.push({
+            elemento: barraDiv,
+            id: resultado.id,
+            nuevoIndex: nuevoIndex,
+            esNueva: esNueva
+        });
+    });
+    
+    // FLIP Animation
+    // Calcular altura de barra para el desplazamiento
+    const primeraBarraExistente = Array.from(barrasExistentes)[0];
+    if (!primeraBarraExistente && barrasParaAnimar.length === 0) return;
+    
+    const alturaBarra = primeraBarraExistente ? primeraBarraExistente.offsetHeight : 40;
+    const gap = 8; // Gap definido en .grupo-grafico-barras
+    const alturaTotal = alturaBarra + gap;
+    
+    // Reordenar el DOM y aplicar animación
+    barrasParaAnimar.forEach(({ elemento, id, nuevoIndex, esNueva }) => {
+        const posicionAnterior = posicionesAnteriores.get(id);
+        
+        // Mover o insertar el elemento a su posición correcta en el DOM
+        if (nuevoIndex === 0) {
+            // Insertar al principio
+            if (contenedor.firstChild !== elemento) {
+                contenedor.insertBefore(elemento, contenedor.firstChild);
+            }
+        } else {
+            // Insertar después del elemento anterior
+            const elementoAnterior = barrasParaAnimar[nuevoIndex - 1].elemento;
+            if (elemento.previousElementSibling !== elementoAnterior) {
+                elementoAnterior.insertAdjacentElement('afterend', elemento);
+            }
+        }
+        
+        // Solo animar si no es nueva y cambió de posición
+        if (!esNueva && posicionAnterior !== undefined && posicionAnterior !== nuevoIndex) {
+            // Calcular desplazamiento
+            const desplazamiento = (posicionAnterior - nuevoIndex) * alturaTotal;
+            
+            // Aplicar posición inicial sin transición
+            elemento.style.transition = 'none';
+            elemento.style.transform = `translateY(${desplazamiento}px)`;
+            
+            // Usar requestAnimationFrame para asegurar que el navegador renderiza el estado inicial
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    // Animar a la posición final
+                    elemento.style.transition = 'transform 0.6s ease-in-out';
+                    elemento.style.transform = 'translateY(0)';
+                });
+            });
+        } else {
+            // Nueva barra o misma posición - asegurar que no tenga transform
+            elemento.style.transition = '';
+            elemento.style.transform = '';
+        }
+    });
+}
+
+// Función auxiliar para crear una barra mini nueva
+function crearBarraMiniHTML(resultado) {
+    const barraDiv = document.createElement('div');
+    barraDiv.className = 'barra-contenedor-mini';
+    barraDiv.dataset.resultadoId = resultado.id;
+    
+    if (resultado.esBarra === false) {
+        barraDiv.innerHTML = `
+            <div class="barra-info-mini">
+                <span class="frente-nombre-mini">
+                    ${obtenerIndicadorVisual(resultado)}
+                    ${resultado.nombre}
+                </span>
+                <span>
+                    <span class="frente-porcentaje-mini">${formatearPorcentaje(resultado.porcentaje)}%</span>
+                    <span class="frente-votos-mini">(${formatearNumero(resultado.votos)})</span>
+                </span>
+            </div>
+        `;
+    } else {
+        barraDiv.innerHTML = `
+            <div class="barra-info-mini">
+                <span class="frente-nombre-mini">
+                    ${obtenerIndicadorVisual(resultado)}
+                    ${resultado.nombre}
+                </span>
+                <span>
+                    <span class="frente-porcentaje-mini">${formatearPorcentaje(resultado.porcentaje)}%</span>
+                    <span class="frente-votos-mini">(${formatearNumero(resultado.votos)})</span>
+                </span>
+            </div>
+            <div class="barra-progreso-mini">
+                <div class="barra-fill" 
+                     style="width: ${resultado.porcentaje}%; background-color: ${resultado.color}">
+                </div>
+            </div>
+        `;
+    }
+    
+    return barraDiv;
+}
+
+// Función auxiliar para actualizar una barra mini existente
+function actualizarBarraMiniExistente(barraDiv, resultado) {
+    const porcentajeSpan = barraDiv.querySelector('.frente-porcentaje-mini');
+    const votosSpan = barraDiv.querySelector('.frente-votos-mini');
+    const barraFill = barraDiv.querySelector('.barra-fill');
+    
+    if (porcentajeSpan) {
+        porcentajeSpan.textContent = `${formatearPorcentaje(resultado.porcentaje)}%`;
+    }
+    if (votosSpan) {
+        votosSpan.textContent = `(${formatearNumero(resultado.votos)})`;
+    }
+    if (barraFill) {
+        barraFill.style.width = `${resultado.porcentaje}%`;
     }
 }
 

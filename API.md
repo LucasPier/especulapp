@@ -140,8 +140,8 @@ async function iniciarCuandoSeaNecesario() {
 La aplicación requiere los siguientes archivos JSON en el mismo directorio:
 
 1. **configuracion_eleccion.json**: Define frentes, escenarios y porcentajes
-2. **configuracion_grupos.json**: Define grupos electorales y número de electores
-3. **datos_servidor.json**: Proporciona datos en tiempo real (opcional)
+2. **configuracion_grupos.json**: Define múltiples configuraciones de grupos electorales
+3. **simulacion/{config_id}/datos_servidor.json**: Proporciona datos en tiempo real por configuración (opcional)
 
 ### Estructura HTML Requerida
 
@@ -177,14 +177,17 @@ El HTML debe incluir los siguientes elementos con IDs específicos:
 
 ## Persistencia de Datos
 
-La aplicación guarda automáticamente el estado en `localStorage`:
+La aplicación guarda automáticamente el estado en `localStorage` con claves específicas por configuración:
 
-- **Key**: `especulapp_estado` - Estado de simulaciones
-- **Key**: `especulapp_switch_blancos` - Preferencia de blancos como válidos
+- **Key**: `especulapp_config_grupos_activa` - ID de la configuración de grupos activa
+- **Key**: `especulapp_estado_{config_id}` - Estado de simulaciones por configuración
+- **Key**: `especulapp_switch_blancos` - Preferencia de blancos como válidos (global)
+
+Cada configuración de grupos mantiene su propio estado independiente.
 
 ## Polling Automático
 
-La aplicación consulta `datos_servidor.json` cada 60 segundos para actualizar datos en tiempo real. El polling se pausa cuando la pestaña no está visible.
+La aplicación consulta `simulacion/{config_id}/datos_servidor.json` cada 60 segundos para actualizar datos en tiempo real. El polling se pausa cuando la pestaña no está visible y consulta diferentes fuentes según la configuración activa.
 
 ## Eventos Personalizados
 
@@ -224,5 +227,5 @@ Para reportar bugs o solicitar features, contactar al equipo de Ciudad Futura.
 
 ---
 
-**Versión**: 1.0.0  
+**Versión**: 1.1.0  
 **Última actualización**: Octubre 2025

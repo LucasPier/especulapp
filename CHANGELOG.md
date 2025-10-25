@@ -1,5 +1,96 @@
 # 📝 Registro de Cambios - EspeculApp
 
+## Versión 1.1.1 - Animaciones y Mejoras de Renderizado
+
+### Fecha: 25 de Octubre de 2025
+
+#### 🎨 Mejoras Visuales
+
+##### ✨ Animaciones de Reordenamiento
+- ✅ **Gráfico de Resultados Global**: Las barras ahora se deslizan suavemente cuando cambian de posición
+- ✅ **Gráficos Mini (Datos Reales)**: Animación fluida al reordenar frentes en tarjetas con datos del servidor
+- ✅ **Técnica FLIP**: Implementación de animación First-Last-Invert-Play para transiciones suaves
+- ✅ **Duración**: Animaciones de 0.6 segundos con ease-in-out para un efecto natural
+
+##### 🔄 Sistema de Renderizado Optimizado
+
+**Gráfico Global (`renderizarGraficoBarras`)**:
+- 🔧 No recrea el DOM completo en cada actualización
+- 🔧 Mantiene elementos existentes y solo actualiza valores
+- 🔧 Usa `insertBefore()` y `insertAdjacentElement()` para reordenar sin duplicaciones
+- 🔧 Aplica `transform: translateY()` para animar cambios de posición
+- 🔧 Usa `requestAnimationFrame` doble para garantizar renderizado del estado inicial
+
+**Gráficos Mini (`renderizarGraficoMini`)**:
+- 🔧 Sistema idéntico al gráfico global para consistencia
+- 🔧 Elimina generación de HTML estático
+- 🔧 Crea elementos dinámicamente con `data-resultado-id`
+- 🔧 Funciones auxiliares: `crearBarraMiniHTML()`, `actualizarBarraMiniExistente()`
+
+##### 🐛 Correcciones de Bugs
+
+**Duplicación de Elementos**:
+- ✅ Corregido: Frentes duplicados en gráficos mini al actualizar datos
+- ✅ Causa: `renderizarGrupoConDatosReales` generaba HTML estático sin `data-resultado-id`
+- ✅ Solución: Ahora usa `renderizarGraficoMini` desde el inicio para consistencia
+
+**Persistencia de Estado**:
+- ✅ Corregido: Valores de sliders no se cargaban desde localStorage
+- ✅ Corregido: Botonera de escenarios no mostraba el escenario activo guardado
+- ✅ Nueva función: `sincronizarInputsConEstado()` para sincronizar inputs y botones
+- ✅ Nueva función ampliada: `actualizarInputsGrupo()` incluye nulos y asistencia
+
+#### 📝 Cambios Técnicos
+
+##### CSS (`styles.css`)
+```css
+.barra-contenedor {
+    transition: transform 0.6s ease-in-out;
+}
+
+.barra-contenedor-mini {
+    transition: transform 0.6s ease-in-out;
+}
+
+.grupo-grafico-barras {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+```
+
+##### JavaScript (`app.js`)
+
+**Funciones Nuevas**:
+- `renderizarGraficoMini(contenedor, resultados)`: Renderizado dinámico con animaciones
+- `crearBarraMiniHTML(resultado)`: Crea elemento de barra mini
+- `actualizarBarraMiniExistente(barraDiv, resultado)`: Actualiza barra existente
+- `sincronizarInputsConEstado(grupoId)`: Sincroniza inputs range y botonera con estado
+
+**Funciones Modificadas**:
+- `renderizarGraficoBarras()`: Sistema FLIP para animaciones
+- `renderizarGrupoConDatosReales()`: Usa `renderizarGraficoMini` en lugar de HTML estático
+- `renderizarGrupoSimulacion()`: Llama a `sincronizarInputsConEstado` en el orden correcto
+- `actualizarInputsGrupo()`: Ampliada para incluir nulos y asistencia
+
+**Eliminados**:
+- `console.warn` innecesarios al inicializar estado de grupos
+
+#### 🎯 Comportamiento
+
+**Animaciones se activan cuando**:
+- Cambias valores de sliders que modifican el orden de los frentes
+- Llegan nuevos datos del servidor que cambian posiciones
+- Cambias entre escenarios predefinidos
+- Cambias la configuración "Incluir blancos como válidos"
+
+**No se animan**:
+- Elementos nuevos que aparecen por primera vez
+- Elementos que permanecen en la misma posición
+- Actualizaciones de valores sin cambio de orden
+
+---
+
 ## Versión 1.1.0 - Múltiples Configuraciones de Grupos
 
 ### Fecha: 25 de Octubre de 2025

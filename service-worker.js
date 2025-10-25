@@ -32,10 +32,10 @@
 // ====================================
 // ⚠️ IMPORTANTE: Incrementa solo la versión del grupo que modificaste
 const CACHE_VERSIONS = {
-    HTML: '1.1.0',    // Actualizado: nuevo selector de configuraciones
-    CSS: '1.1.0',     // Actualizado: estilos para selector
-    JS: '1.1.0',      // Actualizado: lógica de múltiples configuraciones
-    JSON: '1.1.0',    // Actualizado: nueva estructura de configuracion_grupos.json
+    HTML: '1.1.1',    // Actualizado: sin cambios estructurales
+    CSS: '1.1.1',     // Actualizado: animaciones con transform para reordenamiento
+    JS: '1.1.1',      // Actualizado: sistema de renderizado con animaciones FLIP
+    JSON: '1.1.0',    // Sin cambios
     IMG: '1.0.0'
 };
 
