@@ -5,7 +5,7 @@ EspeculApp is a **vanilla JavaScript electoral simulation library** for Ciudad F
 
 **Architecture**: The application is encapsulated in an IIFE (Immediately Invoked Function Expression) that exposes a single global object `EspeculApp` with public API methods.
 
-**Version**: 1.1.0
+**Version**: 1.1.2
 
 ## Module Structure
 
@@ -32,7 +32,7 @@ const EspeculApp = (function() {
         init,      // Initialize the app
         destroy,   // Cleanup resources
         isReady,   // Check if initialized
-        version: '1.1.0'
+        version: '1.1.2'
     };
 })();
 ```
@@ -122,7 +122,9 @@ try {
 ```
 
 ### UI Update Strategy
-- **Never recreate DOM unnecessarily**: Check if card type changed before replacing (`actualizarTarjetaGrupo`)
+- **Configuration changes**: `cambiarConfiguracionGrupos()` clears grid BEFORE loading server data, which calls `renderizarUI()` to create all cards fresh
+- **Never recreate DOM unnecessarily**: `renderizarUI()` checks if cards exist; if yes, updates them; if no, creates them
+- **Card type switching**: `actualizarTarjetaGrupo()` replaces card only when switching between real-data ↔ simulation modes
 - For real-data cards: Update inner values only via `actualizarTarjetaDatosReales()`
 - For simulation cards: Event listeners persist, update via `actualizarLabelsGrupo()`
 
@@ -170,7 +172,9 @@ When creating cards, call `agregarEventListeners(card, grupoId)` which attaches:
 ## Critical Files
 - `app.js:28-178`: Modal system (mostrarDialogo, confirmar, alerta, confirmarAccionPeligrosa)
 - `app.js:183-192`: Initialization sequence in DOMContentLoaded
+- `app.js:340-377`: `cambiarConfiguracionGrupos()` - switches active configuration, clears grid, delegates rendering to `renderizarUI()`
 - `app.js:456-475`: `aplicarEscenario()` - maps scenario percentages to group state
+- `app.js:660-690`: `renderizarUI()` and `actualizarTarjetaGrupo()` - smart card creation/update logic
 - `app.js:968-1027`: `calcularPorcentajesNormalizados()` - handles blanks-as-valid logic
 - `index.html:118-131`: Reusable modal structure
 

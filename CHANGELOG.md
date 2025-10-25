@@ -1,5 +1,36 @@
 # 📝 Registro de Cambios - EspeculApp
 
+## Versión 1.1.2 - Corrección Cambio de Configuración
+
+### Fecha: 25 de Octubre de 2025
+
+#### 🐛 Correcciones de Bugs
+
+**Cambio entre configuraciones de grupos**:
+- ✅ Corregido: Warnings en consola al cambiar entre configuraciones con diferente cantidad de grupos
+- ✅ Causa: `cambiarConfiguracionGrupos()` creaba tarjetas dos veces (manual + vía `renderizarUI()`)
+- ✅ Problema: `renderizarUI()` detectaba tarjetas existentes e intentaba actualizar grupos inexistentes en nueva configuración
+- ✅ Solución: Eliminar creación manual de tarjetas; solo `renderizarUI()` se encarga tras limpiar el grid
+- ✅ Flujo optimizado: Limpiar grid → cargar datos servidor → renderizar UI → calcular resultados
+
+#### 📝 Cambios Técnicos
+
+**Función `cambiarConfiguracionGrupos()` (app.js:366-377)**:
+```javascript
+// ANTES: Creaba tarjetas dos veces
+await cargarDatosServidor();
+gruposGrid.innerHTML = '';
+configGrupoActiva.grupos.forEach(grupo => {
+    gruposGrid.appendChild(crearTarjetaGrupo(grupo));
+});
+
+// AHORA: Solo limpia y delega en renderizarUI()
+gruposGrid.innerHTML = '';
+await cargarDatosServidor(); // Esto llama a renderizarUI()
+```
+
+---
+
 ## Versión 1.1.1 - Animaciones y Mejoras de Renderizado
 
 ### Fecha: 25 de Octubre de 2025

@@ -362,17 +362,13 @@ async function cambiarConfiguracionGrupos(configId) {
     // Cargar estado guardado si existe para esta configuración
     cargarEstadoDesdeLocalStorage();
 
-    // Cargar datos del servidor para la nueva configuración
-    await cargarDatosServidor();
-
-    // Limpiar completamente el grid y recrear las tarjetas
+    // Limpiar completamente el grid ANTES de cargar datos
     const gruposGrid = document.getElementById('grupos-grid');
     gruposGrid.innerHTML = '';
-    
-    configGrupoActiva.grupos.forEach(grupo => {
-        const grupoCard = crearTarjetaGrupo(grupo);
-        gruposGrid.appendChild(grupoCard);
-    });
+
+    // Cargar datos del servidor para la nueva configuración
+    // (esto llamará a renderizarUI() que creará las tarjetas)
+    await cargarDatosServidor();
 
     // Recalcular y actualizar resultados
     calcularYActualizarResultados();
@@ -2402,7 +2398,7 @@ function actualizarBarraMiniExistente(barraDiv, resultado) {
         init,
         destroy,
         isReady,
-        version: '1.0.0'
+        version: '1.1.2'
     };
 })();
 

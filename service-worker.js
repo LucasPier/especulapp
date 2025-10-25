@@ -32,10 +32,10 @@
 // ====================================
 // ⚠️ IMPORTANTE: Incrementa solo la versión del grupo que modificaste
 const CACHE_VERSIONS = {
-    HTML: '1.1.1',    // Actualizado: sin cambios estructurales
-    CSS: '1.1.1',     // Actualizado: animaciones con transform para reordenamiento
-    JS: '1.1.1',      // Actualizado: sistema de renderizado con animaciones FLIP
-    JSON: '1.1.0',    // Sin cambios
+    HTML: '1.1.1',    // Animaciones con transform para reordenamiento
+    CSS: '1.1.1',     // Animaciones con transform para reordenamiento
+    JS: '1.1.2',      // Fix duplicación tarjetas en cambio de configuración
+    JSON: '1.1.0',    // Múltiples configuraciones de grupos
     IMG: '1.0.0'
 };
 
