@@ -7,7 +7,8 @@ const EspeculApp = (function() {
     
     // Variables privadas
     let configEleccion = null;
-    let configGrupos = null;
+    let configGrupos = null; // Almacena TODAS las configuraciones disponibles
+    let configGrupoActiva = null; // La configuración de grupos actualmente seleccionada
     let estadoGrupos = {};
     let incluirBlancosComoValidos = true;
     let datosServidor = null;
@@ -18,6 +19,7 @@ const EspeculApp = (function() {
 
     const STORAGE_KEY = 'especulapp_estado';
     const STORAGE_SWITCH_KEY = 'especulapp_switch_blancos';
+    const STORAGE_CONFIG_KEY = 'especulapp_config_grupos_activa';
 
     // ========================================
     // SISTEMA DE MODALES REUTILIZABLES
@@ -276,6 +278,22 @@ const EspeculApp = (function() {
         configEleccion = await respuestaEleccion.json();
         configGrupos = await respuestaGrupos.json();
 
+        // Cargar configuración activa desde localStorage o usar la primera por defecto
+        const configActivaGuardada = localStorage.getItem(STORAGE_CONFIG_KEY);
+        let configInicial = configGrupos.configuraciones[0];
+        
+        if (configActivaGuardada) {
+            const configEncontrada = configGrupos.configuraciones.find(c => c.id === configActivaGuardada);
+            if (configEncontrada) {
+                configInicial = configEncontrada;
+            }
+        }
+        
+        configGrupoActiva = configInicial;
+
+        // Inicializar el selector de configuraciones
+        inicializarSelectorConfiguraciones();
+
         // Mostrar información de la elección en ambos headers
         const infoEleccion = `${configEleccion.eleccion.nombre} - ${configEleccion.eleccion.fecha}`;
         const eleccionInfoMobile = document.getElementById('eleccion-info-mobile');
@@ -292,12 +310,89 @@ const EspeculApp = (function() {
     }
 }
 
+// Inicializar el selector de configuraciones de grupos
+function inicializarSelectorConfiguraciones() {
+    const selector = document.getElementById('selector-configuracion-grupos');
+    if (!selector || !configGrupos || !configGrupos.configuraciones) return;
+
+    // Limpiar opciones existentes
+    selector.innerHTML = '';
+
+    // Agregar opciones
+    configGrupos.configuraciones.forEach(config => {
+        const option = document.createElement('option');
+        option.value = config.id;
+        option.textContent = config.nombre;
+        if (config.id === configGrupoActiva.id) {
+            option.selected = true;
+        }
+        selector.appendChild(option);
+    });
+
+    // Agregar event listener para cambios
+    selector.addEventListener('change', async (e) => {
+        await cambiarConfiguracionGrupos(e.target.value);
+    });
+}
+
+// Cambiar la configuración de grupos activa
+async function cambiarConfiguracionGrupos(configId) {
+    const nuevaConfig = configGrupos.configuraciones.find(c => c.id === configId);
+    if (!nuevaConfig) {
+        console.error('Configuración no encontrada:', configId);
+        return;
+    }
+
+    // Actualizar configuración activa
+    configGrupoActiva = nuevaConfig;
+
+    // Guardar selección en localStorage
+    localStorage.setItem(STORAGE_CONFIG_KEY, configId);
+
+    // Limpiar datos del servidor anteriores
+    datosServidor = null;
+    gruposConDatosReales.clear();
+
+    // Resetear el estado de grupos para la nueva configuración
+    estadoGrupos = {};
+    
+    // Inicializar estado de grupos con la nueva configuración
+    inicializarEstadoGrupos();
+    
+    // Cargar estado guardado si existe para esta configuración
+    cargarEstadoDesdeLocalStorage();
+
+    // Cargar datos del servidor para la nueva configuración
+    await cargarDatosServidor();
+
+    // Limpiar completamente el grid y recrear las tarjetas
+    const gruposGrid = document.getElementById('grupos-grid');
+    gruposGrid.innerHTML = '';
+    
+    configGrupoActiva.grupos.forEach(grupo => {
+        const grupoCard = crearTarjetaGrupo(grupo);
+        gruposGrid.appendChild(grupoCard);
+    });
+
+    // Recalcular y actualizar resultados
+    calcularYActualizarResultados();
+}
+
 // Cargar datos reales desde el servidor (simula consulta a API)
     async function cargarDatosServidor() {
     try {
+        // Verificar que tengamos una configuración activa
+        if (!configGrupoActiva || !configGrupoActiva.id) {
+            console.warn('⚠️ No hay configuración activa para cargar datos del servidor');
+            return;
+        }
+        
+        // Construir ruta con el ID de la configuración
+        const rutaDatos = `simulacion/${configGrupoActiva.id}/datos_servidor.json`;
+        
         // Agregar cache-busting para evitar caché del navegador
         const timestamp = new Date().getTime();
-        const respuesta = await fetch(`datos_servidor.json?t=${timestamp}`, {
+        const respuesta = await fetch(`${rutaDatos}?t=${timestamp}`, {
             cache: 'no-store',
             headers: {
                 'Cache-Control': 'no-cache, no-store, must-revalidate',
@@ -368,7 +463,7 @@ const EspeculApp = (function() {
     // Solo inicializar grupos que no están en datos reales y no tienen estado guardado
     const primerEscenario = configEleccion.eleccion.escenarios[0];
     
-    configGrupos.grupos.forEach(grupo => {
+    configGrupoActiva.grupos.forEach(grupo => {
         // No inicializar si el grupo tiene datos reales
         if (gruposConDatosReales.has(grupo.id)) {
             return;
@@ -393,7 +488,9 @@ const EspeculApp = (function() {
 // Cargar estado desde LocalStorage
     function cargarEstadoDesdeLocalStorage() {
     try {
-        const estadoGuardado = localStorage.getItem(STORAGE_KEY);
+        // Cargar estado específico de la configuración activa
+        const storageKeyConfig = `${STORAGE_KEY}_${configGrupoActiva.id}`;
+        const estadoGuardado = localStorage.getItem(storageKeyConfig);
         const switchGuardado = localStorage.getItem(STORAGE_SWITCH_KEY);
         
         if (estadoGuardado) {
@@ -433,7 +530,9 @@ const EspeculApp = (function() {
             }
         });
         
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(estadoParaGuardar));
+        // Guardar estado específico de la configuración activa
+        const storageKeyConfig = `${STORAGE_KEY}_${configGrupoActiva.id}`;
+        localStorage.setItem(storageKeyConfig, JSON.stringify(estadoParaGuardar));
         localStorage.setItem(STORAGE_SWITCH_KEY, incluirBlancosComoValidos.toString());
     } catch (error) {
         // Error silencioso al guardar en localStorage
@@ -449,14 +548,15 @@ const EspeculApp = (function() {
         );
         
         // Si llegamos aquí, el usuario confirmó
-        // Limpiar localStorage
-        localStorage.removeItem(STORAGE_KEY);
+        // Limpiar localStorage específico de la configuración activa
+        const storageKeyConfig = `${STORAGE_KEY}_${configGrupoActiva.id}`;
+        localStorage.removeItem(storageKeyConfig);
         localStorage.removeItem(STORAGE_SWITCH_KEY);
         
         // Resetear estado a valores por defecto
         const primerEscenario = configEleccion.eleccion.escenarios[0];
         
-        configGrupos.grupos.forEach(grupo => {
+        configGrupoActiva.grupos.forEach(grupo => {
             // Solo resetear grupos de simulación
             if (!gruposConDatosReales.has(grupo.id)) {
                 estadoGrupos[grupo.id] = {
@@ -477,7 +577,7 @@ const EspeculApp = (function() {
         renderizarUI();
         
         // Actualizar todos los controles visuales de cada grupo de simulación
-        configGrupos.grupos.forEach(grupo => {
+        configGrupoActiva.grupos.forEach(grupo => {
             if (!gruposConDatosReales.has(grupo.id)) {
                 const card = document.getElementById(`grupo-${grupo.id}`);
                 if (card) {
@@ -561,13 +661,13 @@ const EspeculApp = (function() {
     const tarjetasExistentes = gruposGrid.querySelectorAll('.grupo-card');
     if (tarjetasExistentes.length > 0) {
         // Actualizar tarjetas existentes sin recrearlas
-        configGrupos.grupos.forEach(grupo => {
+        configGrupoActiva.grupos.forEach(grupo => {
             actualizarTarjetaGrupo(grupo);
         });
     } else {
         // Primera vez: crear todas las tarjetas
         gruposGrid.innerHTML = '';
-        configGrupos.grupos.forEach(grupo => {
+        configGrupoActiva.grupos.forEach(grupo => {
             const grupoCard = crearTarjetaGrupo(grupo);
             gruposGrid.appendChild(grupoCard);
         });
@@ -1051,7 +1151,7 @@ const EspeculApp = (function() {
 // Calcular porcentajes normalizados para un grupo
     function calcularPorcentajesNormalizados(grupoId) {
     const estado = estadoGrupos[grupoId];
-    const grupo = configGrupos.grupos.find(g => g.id === grupoId);
+    const grupo = configGrupoActiva.grupos.find(g => g.id === grupoId);
     
     const porcentajes = {
         frentes: {},
@@ -1109,7 +1209,7 @@ const EspeculApp = (function() {
 // Actualizar labels de porcentajes en un grupo
     function actualizarLabelsGrupo(grupoId) {
     const porcentajes = calcularPorcentajesNormalizados(grupoId);
-    const resultados = calcularResultadosGrupo(configGrupos.grupos.find(g => g.id === grupoId));
+    const resultados = calcularResultadosGrupo(configGrupoActiva.grupos.find(g => g.id === grupoId));
     const estado = estadoGrupos[grupoId];
     
     // Actualizar label de asistencia
@@ -1414,7 +1514,7 @@ const EspeculApp = (function() {
     });
     
     // Sumar resultados de todos los grupos
-    configGrupos.grupos.forEach(grupo => {
+    configGrupoActiva.grupos.forEach(grupo => {
         // Verificar si el grupo tiene datos reales
         if (gruposConDatosReales.has(grupo.id)) {
             // Usar datos reales del servidor
@@ -1733,7 +1833,7 @@ function obtenerNombreCargoSingular(frenteId) {
 
 // Actualizar resultados de cada grupo individual
     function actualizarResultadosGrupos() {
-    configGrupos.grupos.forEach(grupo => {
+    configGrupoActiva.grupos.forEach(grupo => {
         // Solo actualizar grupos de simulación (no los que tienen datos reales)
         if (gruposConDatosReales.has(grupo.id)) {
             return; // Saltar grupos con datos reales
@@ -1792,7 +1892,7 @@ function obtenerNombreCargoSingular(frenteId) {
         incluirBlancosComoValidos = e.target.checked;
         
         // Actualizar tarjetas de datos reales
-        configGrupos.grupos.forEach(grupo => {
+        configGrupoActiva.grupos.forEach(grupo => {
             if (gruposConDatosReales.has(grupo.id)) {
                 actualizarTarjetaGrupo(grupo);
             } else {
@@ -1968,7 +2068,7 @@ function obtenerNombreCargoSingular(frenteId) {
         return;
     }
 
-    configGrupos.grupos.forEach(grupo => {
+    configGrupoActiva.grupos.forEach(grupo => {
         // Solo aplicar a grupos de simulación (no a grupos con datos reales)
         if (!gruposConDatosReales.has(grupo.id)) {
             estadoGrupos[grupo.id].asistencia = valor;
@@ -2001,7 +2101,7 @@ function obtenerNombreCargoSingular(frenteId) {
         return;
     }
 
-    configGrupos.grupos.forEach(grupo => {
+    configGrupoActiva.grupos.forEach(grupo => {
         // Solo aplicar a grupos de simulación (no a grupos con datos reales)
         if (!gruposConDatosReales.has(grupo.id)) {
             estadoGrupos[grupo.id].votosNulos = valor;

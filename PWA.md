@@ -269,7 +269,91 @@ El Service Worker se actualiza automáticamente cuando:
 
 ---
 
-## 🔒 Seguridad
+## � Configuraciones Múltiples y Caché
+
+### Estructura de Datos por Configuración
+
+Desde la versión 1.1.0, la aplicación soporta múltiples configuraciones de grupos electorales. Cada configuración tiene su propio archivo de datos del servidor:
+
+```
+simulacion/
+├── config_1/
+│   └── datos_servidor.json
+├── config_2/
+│   └── datos_servidor.json
+└── config_N/
+    └── datos_servidor.json
+```
+
+### Caché de Datos por Configuración
+
+**Todos los archivos** `datos_servidor.json` de todas las configuraciones se cachean durante la instalación:
+
+```javascript
+JSON: [
+    './configuracion_eleccion.json',
+    './configuracion_grupos.json',
+    './simulacion/config_1/datos_servidor.json',
+    './simulacion/config_2/datos_servidor.json',
+    './manifest.json'
+]
+```
+
+### Estrategia de Fetch para Rutas Dinámicas
+
+El Service Worker detecta automáticamente peticiones a `/simulacion/` y aplica la estrategia **Network First**:
+
+```javascript
+// En service-worker.js
+if (url.pathname.endsWith('datos_servidor.json') || 
+    url.pathname.includes('/simulacion/')) {
+    return await fetchWithCacheFallback(request);
+}
+```
+
+**Comportamiento:**
+1. Intenta obtener de la red (datos frescos)
+2. Si falla la red, usa la versión cacheada
+3. Funciona offline con los últimos datos cacheados
+
+### Agregar Nueva Configuración
+
+Cuando agregas una nueva configuración (ej: `config_3`):
+
+1. **Agregar al caché en `service-worker.js`**:
+```javascript
+JSON: [
+    './configuracion_eleccion.json',
+    './configuracion_grupos.json',
+    './simulacion/config_1/datos_servidor.json',
+    './simulacion/config_2/datos_servidor.json',
+    './simulacion/config_3/datos_servidor.json',  // ← NUEVO
+    './manifest.json'
+]
+```
+
+2. **Incrementar versión JSON**:
+```javascript
+CACHE_VERSIONS = {
+    HTML: '1.1.0',
+    CSS: '1.1.0',
+    JS: '1.1.0',
+    JSON: '1.1.1',    // ← INCREMENTADO
+    IMG: '1.0.0'
+}
+```
+
+3. **Crear archivos**:
+```bash
+mkdir -p simulacion/config_3
+# Crear simulacion/config_3/datos_servidor.json con la estructura correcta
+```
+
+**Nota**: El Service Worker cachea todos los archivos especificados al instalar. Las rutas dinámicas (`/simulacion/{config_id}/`) se manejan automáticamente mediante la detección de patrón.
+
+---
+
+## �🔒 Seguridad
 
 ### HTTPS Requerido
 
@@ -335,4 +419,4 @@ Cuando modificas archivos:
 ---
 
 **Última actualización**: Octubre 2025  
-**Versión de la guía**: 1.0.0
+**Versión de la guía**: 1.1.0

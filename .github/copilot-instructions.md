@@ -1,9 +1,11 @@
 # EspeculApp - AI Coding Instructions
 
 ## Project Overview
-EspeculApp is a **vanilla JavaScript electoral simulation library** for Ciudad Futura (Santa Fe, Argentina). It simulates election scenarios with real-time data integration, allowing users to model different voting patterns across regional groups.
+EspeculApp is a **vanilla JavaScript electoral simulation library** for Ciudad Futura (Santa Fe, Argentina). It simulates election scenarios with real-time data integration, allowing users to model different voting patterns across regional groups. **Now supports multiple electoral group configurations**.
 
 **Architecture**: The application is encapsulated in an IIFE (Immediately Invoked Function Expression) that exposes a single global object `EspeculApp` with public API methods.
+
+**Version**: 1.1.0
 
 ## Module Structure
 
@@ -15,12 +17,14 @@ const EspeculApp = (function() {
     
     // Private variables and functions
     let configEleccion = null;
-    let configGrupos = null;
+    let configGrupos = null;           // All configurations
+    let configGrupoActiva = null;      // Currently selected configuration
     // ... more private state
     
     // Private functions
     function cargarConfiguraciones() { ... }
     function renderizarUI() { ... }
+    function cambiarConfiguracionGrupos(configId) { ... }
     // ... more private functions
     
     // Public API
@@ -28,7 +32,7 @@ const EspeculApp = (function() {
         init,      // Initialize the app
         destroy,   // Cleanup resources
         isReady,   // Check if initialized
-        version: '1.0.0'
+        version: '1.1.0'
     };
 })();
 ```
@@ -39,15 +43,26 @@ const EspeculApp = (function() {
 - Safe for integration with other applications
 - No prototype modifications or global namespace pollution
 
-## Three-Tier Data Model
-1. **Configuration Files (Static)**: `configuracion_eleccion.json` defines election metadata (frentes/parties, scenarios with vote percentages), `configuracion_grupos.json` defines electoral groups/regions with elector counts
-2. **Real-Time Data**: `datos_servidor.json` provides live results for groups with actual vote counts (polling every 60s)
-3. **Simulation State**: `estadoGrupos` object holds user-configured scenarios for groups without real data, persisted to `localStorage`
+## Multi-Tier Data Model
+1. **Configuration Files (Static)**: 
+   - `configuracion_eleccion.json`: Defines election metadata (frentes/parties, scenarios with vote percentages)
+   - `configuracion_grupos.json`: Defines **multiple configurations** of electoral groups, each with its own set of groups
+2. **Real-Time Data (by configuration)**: `simulacion/{config_id}/datos_servidor.json` provides live results for groups with actual vote counts (polling every 60s)
+3. **Simulation State (by configuration)**: `estadoGrupos` object holds user-configured scenarios for groups without real data, persisted to `localStorage` with configuration-specific keys
+
+### Multiple Configurations System
+- Users can select between different group configurations via `<select id="selector-configuracion-grupos">`
+- Each configuration has:
+  - Unique `id` (e.g., `config_1`, `config_2`)
+  - Descriptive `nombre` (e.g., "Clústeres provinciales", "Proximidad territorial")
+  - Independent set of `grupos` (electoral groups)
+  - Separate localStorage state: `especulapp_estado_{config_id}`
+  - Own server data file: `simulacion/{config_id}/datos_servidor.json`
 
 ### Hybrid Display Logic
-- Groups in `gruposConDatosReales` Set: Render read-only cards showing live results from `datos_servidor.json`
+- Groups in `gruposConDatosReales` Set: Render read-only cards showing live results from `simulacion/{config_id}/datos_servidor.json`
 - Other groups: Render interactive sliders/controls for user simulation
-- The app **dynamically switches** card types when `datos_servidor.json` updates
+- The app **dynamically switches** card types when server data updates
 
 ### State Management Pattern
 ```javascript
@@ -118,9 +133,11 @@ try {
 4. Render global bar chart in `#grafico-resultados`
 
 ### File Naming & Organization
-- No build process, no modules - single `app.js` (1766 lines)
-- JSON files must be in root for `fetch()` calls
+- No build process, no modules - single `app.js` (2200+ lines)
+- JSON configurations in root: `configuracion_eleccion.json`, `configuracion_grupos.json`
+- Server data organized by configuration: `simulacion/{config_id}/datos_servidor.json`
 - Styles use CSS custom properties in `:root` (see `styles.css:6-16`)
+- Service Worker handles offline caching: `service-worker.js`
 
 ## Common Patterns
 
@@ -144,6 +161,9 @@ When creating cards, call `agregarEventListeners(card, grupoId)` which attaches:
 - `inicializarDeteccionVisibilidad()`: Re-fetch on tab focus after >1 minute
 
 ### localStorage Keys
+- `especulapp_config_grupos_activa`: Currently selected configuration ID
+- `especulapp_estado_{config_id}`: Serialized `estadoGrupos` object per configuration
+- `especulapp_switch_blancos`: Boolean for `incluirBlancosComoValidos`
 - `especulapp_estado`: Serialized `estadoGrupos` object
 - `especulapp_switch_blancos`: Boolean for `incluirBlancosComoValidos`
 

@@ -226,6 +226,105 @@ Resultado:
 
 ---
 
+## 🔄 Caché con Múltiples Configuraciones (v1.1.0+)
+
+### Escenario: Datos del servidor por configuración
+
+```
+┌─────────────────────────────────────────────────────────┐
+│ ESTRUCTURA DE DATOS                                     │
+├─────────────────────────────────────────────────────────┤
+│                                                         │
+│  simulacion/                                            │
+│  ├── config_1/                                          │
+│  │   └── datos_servidor.json  (Clústeres provinciales) │
+│  └── config_2/                                          │
+│      └── datos_servidor.json  (Proximidad territorial) │
+│                                                         │
+└─────────────────────────────────────────────────────────┘
+                          ↓
+┌─────────────────────────────────────────────────────────┐
+│ CACHÉ EN INSTALACIÓN                                    │
+├─────────────────────────────────────────────────────────┤
+│                                                         │
+│  JSON: [                                                │
+│      './configuracion_eleccion.json',                   │
+│      './configuracion_grupos.json',                     │
+│      './simulacion/config_1/datos_servidor.json',       │
+│      './simulacion/config_2/datos_servidor.json',       │
+│      './manifest.json'                                  │
+│  ]                                                      │
+│                                                         │
+│  ✅ TODOS los datos_servidor.json se cachean           │
+│  ✅ Disponibles offline inmediatamente                  │
+│                                                         │
+└─────────────────────────────────────────────────────────┘
+                          ↓
+┌─────────────────────────────────────────────────────────┐
+│ FETCH DINÁMICO POR CONFIGURACIÓN                       │
+├─────────────────────────────────────────────────────────┤
+│                                                         │
+│  Usuario cambia de configuración → config_2             │
+│                                                         │
+│  Petición: simulacion/config_2/datos_servidor.json      │
+│  ├─ 1. 🔍 Detecta patrón /simulacion/                  │
+│  ├─ 2. 🌐 Intenta Network First                        │
+│  ├─ 3a. ✅ Si hay red → Datos frescos + actualiza caché│
+│  └─ 3b. ❌ Si no hay red → Sirve desde caché           │
+│                                                         │
+│  Resultado:                                             │
+│  ✅ Online: Datos actualizados en tiempo real          │
+│  ✅ Offline: Últimos datos cacheados disponibles       │
+│                                                         │
+└─────────────────────────────────────────────────────────┘
+                          ↓
+┌─────────────────────────────────────────────────────────┐
+│ AGREGAR NUEVA CONFIGURACIÓN (config_3)                 │
+├─────────────────────────────────────────────────────────┤
+│                                                         │
+│  1. 📁 Crear carpeta y archivo:                        │
+│     mkdir simulacion/config_3                           │
+│     touch simulacion/config_3/datos_servidor.json       │
+│                                                         │
+│  2. ✏️ Actualizar service-worker.js:                   │
+│     JSON: [                                             │
+│         './configuracion_eleccion.json',                │
+│         './configuracion_grupos.json',                  │
+│         './simulacion/config_1/datos_servidor.json',    │
+│         './simulacion/config_2/datos_servidor.json',    │
+│         './simulacion/config_3/datos_servidor.json',  ← │
+│         './manifest.json'                               │
+│     ]                                                   │
+│                                                         │
+│  3. 🔄 Incrementar versión:                            │
+│     CACHE_VERSIONS = {                                  │
+│         JSON: '1.1.1'  ← (era 1.1.0)                   │
+│     }                                                   │
+│                                                         │
+│  4. 🚀 Desplegar → SW actualiza automáticamente        │
+│                                                         │
+└─────────────────────────────────────────────────────────┘
+```
+
+### Detección Automática de Rutas
+
+El Service Worker detecta automáticamente cualquier petición a `/simulacion/`:
+
+```javascript
+// En fetch event
+if (url.pathname.endsWith('datos_servidor.json') || 
+    url.pathname.includes('/simulacion/')) {
+    return await fetchWithCacheFallback(request);
+}
+```
+
+**Beneficios:**
+- ✅ No importa cuántas configuraciones agregues
+- ✅ La detección de patrón funciona para todas
+- ✅ Solo necesitas cachear los archivos específicos en la instalación
+
+---
+
 ## ⚡ Ventajas del Sistema
 
 ### 1. Granularidad
@@ -251,4 +350,4 @@ Resultado:
 ---
 
 **Creado**: Octubre 2025  
-**Versión del diagrama**: 1.0.0
+**Versión del diagrama**: 1.1.0

@@ -1,0 +1,54 @@
+{
+  "grupos": [
+    {
+      "id": "grupo_1",
+      "nombre": "Ciudad de Rosario",
+      "electores": 820000
+    },
+    {
+      "id": "grupo_2",
+      "nombre": "Cordón Industrial (San Lorenzo - Villa Gdor. Gálvez)",
+      "electores": 280000
+    },
+    {
+      "id": "grupo_3",
+      "nombre": "Santa Fe Capital y Santo Tomé",
+      "electores": 410000
+    },
+    {
+      "id": "grupo_4",
+      "nombre": "Cinturón Agrícola (Rafaela - Sunchales - Esperanza)",
+      "electores": 320000
+    },
+    {
+      "id": "grupo_5",
+      "nombre": "Sur Productivo (Venado Tuerto - Casilda - Firmat)",
+      "electores": 290000
+    },
+    {
+      "id": "grupo_6",
+      "nombre": "Corredor Oeste (San Lorenzo - Cañada de Gómez)",
+      "electores": 180000
+    },
+    {
+      "id": "grupo_7",
+      "nombre": "Norte Agroindustrial (Reconquista - Avellaneda)",
+      "electores": 160000
+    },
+    {
+      "id": "grupo_8",
+      "nombre": "Pueblos del Centro (Colonias Suizas e Italianas)",
+      "electores": 240000
+    },
+    {
+      "id": "grupo_9",
+      "nombre": "Zona Rural Norte (9 de Julio - Vera - San Cristóbal)",
+      "electores": 140000
+    },
+    {
+      "id": "grupo_10",
+      "nombre": "Pequeñas Localidades y Comunas Dispersas",
+      "electores": 260000
+    }
+  ]
+}

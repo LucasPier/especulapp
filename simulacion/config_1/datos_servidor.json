@@ -1,0 +1,51 @@
+{
+  "timestamp": "2025-10-25T14:30:00Z",
+  "actualizacion": "Última actualización: 14:30hs",
+  "grupos_con_datos": [
+    {
+      "id": "grupo_2",
+      "electores": 329783,
+      "asistentes": 245000,
+      "nulos": 4900,
+      "blancos": 7350,
+      "votosValidos": 232750,
+      "frentes": {
+        "frente_1": 102410,
+        "frente_2": 65215,
+        "frente_3": 48913,
+        "otros": 16212
+      },
+      "porcentaje_escrutado": 78.5
+    },
+    {
+      "id": "grupo_5",
+      "electores": 42622,
+      "asistentes": 32500,
+      "nulos": 650,
+      "blancos": 975,
+      "votosValidos": 30875,
+      "frentes": {
+        "frente_1": 13585,
+        "frente_2": 8650,
+        "frente_3": 6175,
+        "otros": 2465
+      },
+      "porcentaje_escrutado": 95.8
+    },
+    {
+      "id": "grupo_8",
+      "electores": 503755,
+      "asistentes": 380000,
+      "nulos": 7600,
+      "blancos": 11400,
+      "votosValidos": 361000,
+      "frentes": {
+        "frente_1": 158840,
+        "frente_2": 101280,
+        "frente_3": 72200,
+        "otros": 28680
+      },
+      "porcentaje_escrutado": 82.3
+    }
+  ]
+}

@@ -32,10 +32,10 @@
 // ====================================
 // ⚠️ IMPORTANTE: Incrementa solo la versión del grupo que modificaste
 const CACHE_VERSIONS = {
-    HTML: '1.0.5',
-    CSS: '1.0.7',
-    JS: '1.0.5',
-    JSON: '1.0.2',
+    HTML: '1.1.0',    // Actualizado: nuevo selector de configuraciones
+    CSS: '1.1.0',     // Actualizado: estilos para selector
+    JS: '1.1.0',      // Actualizado: lógica de múltiples configuraciones
+    JSON: '1.1.0',    // Actualizado: nueva estructura de configuracion_grupos.json
     IMG: '1.0.0'
 };
 
@@ -70,7 +70,9 @@ const CACHE_RESOURCES = {
     JSON: [
         './configuracion_eleccion.json',
         './configuracion_grupos.json',
-        './datos_servidor.json',
+        // Datos del servidor por configuración
+        './simulacion/config_1/datos_servidor.json',  // Clústeres provinciales
+        './simulacion/config_2/datos_servidor.json',  // Proximidad territorial
         './manifest.json'
     ],
     IMG: [
@@ -192,7 +194,9 @@ self.addEventListener('fetch', (event) => {
             try {
                 // ESTRATEGIA ESPECIAL PARA datos_servidor.json
                 // Este archivo necesita estar siempre actualizado
-                if (url.pathname.endsWith('datos_servidor.json')) {
+                // Ahora incluye rutas dinámicas: simulacion/config_X/datos_servidor.json
+                if (url.pathname.endsWith('datos_servidor.json') || 
+                    url.pathname.includes('/simulacion/')) {
                     return await fetchWithCacheFallback(request);
                 }
                 

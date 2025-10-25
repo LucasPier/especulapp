@@ -1,54 +1,126 @@
 {
-  "grupos": [
+  "configuraciones": [
     {
-      "id": "grupo_1",
-      "nombre": "Ciudad de Rosario",
-      "electores": 820000
+      "id": "config_1",
+      "nombre": "Clústeres provinciales",
+      "grupos": [
+        {
+          "id": "grupo_1",
+          "nombre": "Clúster 1",
+          "electores": 135668
+        },
+        {
+          "id": "grupo_2",
+          "nombre": "Clúster 2",
+          "electores": 329783
+        },
+        {
+          "id": "grupo_3",
+          "nombre": "Clúster 3",
+          "electores": 459635
+        },
+        {
+          "id": "grupo_4",
+          "nombre": "Clúster 4",
+          "electores": 313881
+        },
+        {
+          "id": "grupo_5",
+          "nombre": "Clúster 5",
+          "electores": 42622
+        },
+        {
+          "id": "grupo_6",
+          "nombre": "Clúster 6",
+          "electores": 248260
+        },
+        {
+          "id": "grupo_7",
+          "nombre": "Clúster 7",
+          "electores": 104620
+        },
+        {
+          "id": "grupo_8",
+          "nombre": "Clúster 8",
+          "electores": 503755
+        },
+        {
+          "id": "grupo_9",
+          "nombre": "Clúster 9",
+          "electores": 167129
+        },
+        {
+          "id": "grupo_10",
+          "nombre": "Clúster 10",
+          "electores": 120761
+        },    
+        {
+          "id": "grupo_11",
+          "nombre": "Clúster 11",
+          "electores": 135668
+        },
+        {
+          "id": "grupo_12",
+          "nombre": "Ciudades Chicas",
+          "electores": 303124
+        }
+      ]
     },
     {
-      "id": "grupo_2",
-      "nombre": "Cordón Industrial (San Lorenzo - Villa Gdor. Gálvez)",
-      "electores": 280000
-    },
-    {
-      "id": "grupo_3",
-      "nombre": "Santa Fe Capital y Santo Tomé",
-      "electores": 410000
-    },
-    {
-      "id": "grupo_4",
-      "nombre": "Cinturón Agrícola (Rafaela - Sunchales - Esperanza)",
-      "electores": 320000
-    },
-    {
-      "id": "grupo_5",
-      "nombre": "Sur Productivo (Venado Tuerto - Casilda - Firmat)",
-      "electores": 290000
-    },
-    {
-      "id": "grupo_6",
-      "nombre": "Corredor Oeste (San Lorenzo - Cañada de Gómez)",
-      "electores": 180000
-    },
-    {
-      "id": "grupo_7",
-      "nombre": "Norte Agroindustrial (Reconquista - Avellaneda)",
-      "electores": 160000
-    },
-    {
-      "id": "grupo_8",
-      "nombre": "Pueblos del Centro (Colonias Suizas e Italianas)",
-      "electores": 240000
-    },
-    {
-      "id": "grupo_9",
-      "nombre": "Zona Rural Norte (9 de Julio - Vera - San Cristóbal)",
-      "electores": 140000
-    },
-    {
-      "id": "grupo_10",
-      "nombre": "Pequeñas Localidades y Comunas Dispersas",
-      "electores": 260000
+      "id": "config_2",
+      "nombre": "Proximidad territorial",
+      "grupos": [
+        {
+          "id": "grupo_1",
+          "nombre": "Ciudad de Rosario",
+          "electores": 820000
+        },
+        {
+          "id": "grupo_2",
+          "nombre": "Cordón Industrial (San Lorenzo - Villa Gdor. Gálvez)",
+          "electores": 280000
+        },
+        {
+          "id": "grupo_3",
+          "nombre": "Santa Fe Capital y Santo Tomé",
+          "electores": 410000
+        },
+        {
+          "id": "grupo_4",
+          "nombre": "Cinturón Agrícola (Rafaela - Sunchales - Esperanza)",
+          "electores": 320000
+        },
+        {
+          "id": "grupo_5",
+          "nombre": "Sur Productivo (Venado Tuerto - Casilda - Firmat)",
+          "electores": 290000
+        },
+        {
+          "id": "grupo_6",
+          "nombre": "Corredor Oeste (San Lorenzo - Cañada de Gómez)",
+          "electores": 180000
+        },
+        {
+          "id": "grupo_7",
+          "nombre": "Norte Agroindustrial (Reconquista - Avellaneda)",
+          "electores": 160000
+        },
+        {
+          "id": "grupo_8",
+          "nombre": "Pueblos del Centro (Colonias Suizas e Italianas)",
+          "electores": 240000
+        },
+        {
+          "id": "grupo_9",
+          "nombre": "Zona Rural Norte (9 de Julio - Vera - San Cristóbal)",
+          "electores": 140000
+        },
+        {
+          "id": "grupo_10",
+          "nombre": "Pequeñas Localidades y Comunas Dispersas",
+          "electores": 260000
+        }
+      ]
     }
   ]
 }

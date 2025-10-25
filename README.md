@@ -1,16 +1,17 @@
 # EspeculApp - Simulador Electoral
 
-![Versión](https://img.shields.io/badge/versi%C3%B3n-1.0.0-blue)
+![Versión](https://img.shields.io/badge/versi%C3%B3n-1.1.0-blue)
 ![JavaScript](https://img.shields.io/badge/JavaScript-ES6+-yellow)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
-Una librería JavaScript encapsulada para simular escenarios electorales con integración de datos en tiempo real.
+Una librería JavaScript encapsulada para simular escenarios electorales con integración de datos en tiempo real y soporte para múltiples configuraciones de grupos electorales.
 
 ## 🚀 Características
 
 - ✅ **Encapsulada y sin conflictos**: Expone solo un objeto global `EspeculApp`
-- 📊 **Datos en tiempo real**: Polling automático cada 60 segundos
-- 💾 **Persistencia automática**: Guarda el estado en localStorage
+- � **Múltiples configuraciones**: Selecciona entre diferentes agrupaciones electorales
+- �📊 **Datos en tiempo real**: Polling automático cada 60 segundos por configuración
+- 💾 **Persistencia automática**: Guarda el estado independiente de cada configuración
 - 🎨 **Interfaz responsiva**: Funciona en desktop, tablet y móvil
 - 🎯 **Simulaciones interactivas**: Controles de slider para ajustar parámetros
 - 📈 **Visualización dinámica**: Gráficos de barras actualizados en tiempo real
@@ -116,7 +117,7 @@ Verifica si la aplicación está inicializada.
 Versión actual de la librería.
 
 - **Tipo**: `string`
-- **Valor**: `"1.0.0"`
+- **Valor**: `"1.1.0"`
 
 ## 📁 Estructura de Archivos
 
@@ -126,8 +127,14 @@ especulapp/
 ├── app.js                          # Librería principal (encapsulada)
 ├── styles.css                      # Estilos de la aplicación
 ├── configuracion_eleccion.json     # Configuración de frentes y escenarios
-├── configuracion_grupos.json       # Configuración de grupos electorales
-├── datos_servidor.json             # Datos en tiempo real (opcional)
+├── configuracion_grupos.json       # Configuraciones de grupos electorales (múltiples)
+├── simulacion/                     # Datos del servidor por configuración
+│   ├── config_1/
+│   │   └── datos_servidor.json    # Datos para configuración 1
+│   └── config_2/
+│       └── datos_servidor.json    # Datos para configuración 2
+├── service-worker.js               # Service Worker para PWA
+├── manifest.json                   # Manifiesto de la PWA
 ├── API.md                          # Documentación completa de la API
 └── README.md                       # Este archivo
 ```
@@ -166,42 +173,80 @@ Define los frentes políticos y escenarios de votación:
 
 ### configuracion_grupos.json
 
-Define los grupos electorales:
+Define múltiples configuraciones de grupos electorales:
 
 ```json
 {
-  "grupos": [
+  "configuraciones": [
     {
-      "id": "grupo_1",
-      "nombre": "Centro",
-      "electores": 10000
+      "id": "config_1",
+      "nombre": "Clústeres provinciales",
+      "grupos": [
+        {
+          "id": "grupo_1",
+          "nombre": "Clúster 1",
+          "electores": 135668
+        },
+        {
+          "id": "grupo_2",
+          "nombre": "Clúster 2",
+          "electores": 329783
+        }
+      ]
+    },
+    {
+      "id": "config_2",
+      "nombre": "Proximidad territorial",
+      "grupos": [
+        {
+          "id": "grupo_1",
+          "nombre": "Ciudad de Rosario",
+          "electores": 820000
+        },
+        {
+          "id": "grupo_2",
+          "nombre": "Cordón Industrial",
+          "electores": 280000
+        }
+      ]
     }
   ]
 }
 ```
 
-### datos_servidor.json
+### Datos del Servidor (por configuración)
 
-Proporciona datos en tiempo real (opcional):
+Los datos en tiempo real se organizan por configuración:
+
+**Ruta**: `simulacion/{config_id}/datos_servidor.json`
+
+Ejemplo para `simulacion/config_1/datos_servidor.json`:
 
 ```json
 {
+  "timestamp": "2025-10-25T14:30:00Z",
+  "actualizacion": "Última actualización: 14:30hs",
   "grupos_con_datos": [
     {
-      "id": "grupo_1",
-      "electores": 10000,
-      "asistentes": 7500,
-      "votosValidos": 7000,
-      "nulos": 300,
-      "blancos": 200,
-      "porcentaje_escrutado": 85.5,
+      "id": "grupo_2",
+      "electores": 329783,
+      "asistentes": 245000,
+      "nulos": 4900,
+      "blancos": 7350,
+      "votosValidos": 232750,
       "frentes": {
-        "frente_1": 3500
-      }
+        "frente_1": 102410,
+        "frente_2": 65215,
+        "frente_3": 48913,
+        "otros": 16212
+      },
+      "porcentaje_escrutado": 78.5
     }
   ]
 }
 ```
+
+**Nota**: Cada configuración tiene su propio archivo de datos del servidor en su respectiva carpeta.
 
 ## 🔧 Desarrollo
 
@@ -230,19 +275,21 @@ const EspeculApp = (function() {
     // ⚠️ Variables privadas - NO son accesibles desde fuera
     let configEleccion = null;
     let configGrupos = null;
+    let configGrupoActiva = null;
     let estadoGrupos = {};
     
     // ⚠️ Funciones privadas - NO son accesibles desde fuera
     function cargarConfiguraciones() { ... }
     function renderizarUI() { ... }
     function calcularResultados() { ... }
+    function cambiarConfiguracionGrupos(configId) { ... }
     
     // ✅ API Pública - Accesible desde EspeculApp.*
     return {
         init,
         destroy,
         isReady,
-        version: '1.0.0'
+        version: '1.1.0'
     };
 })();
 ```
@@ -277,6 +324,98 @@ return {
 ```
 
 3. **Actualizar documentación** en `API.md`
+
+## 🔄 Múltiples Configuraciones de Grupos
+
+### Funcionamiento
+
+La aplicación permite definir y seleccionar entre múltiples configuraciones de grupos electorales. Cada configuración:
+
+- ✅ Tiene su propio conjunto de grupos con IDs, nombres y cantidades de electores
+- ✅ Mantiene un estado independiente en localStorage
+- ✅ Consulta sus propios datos del servidor desde `simulacion/{config_id}/`
+- ✅ No comparte valores con otras configuraciones
+
+### Selector de Configuraciones
+
+Un `<select>` permite cambiar entre configuraciones:
+
+```html
+<select id="selector-configuracion-grupos">
+  <option value="config_1">Clústeres provinciales</option>
+  <option value="config_2">Proximidad territorial</option>
+</select>
+```
+
+### Persistencia Independiente
+
+Cada configuración guarda su estado en una clave diferente de localStorage:
+
+```javascript
+// Configuración 1
+localStorage.getItem('especulapp_estado_config_1')
+
+// Configuración 2
+localStorage.getItem('especulapp_estado_config_2')
+```
+
+### Datos del Servidor por Configuración
+
+La aplicación consulta la ruta específica según la configuración activa:
+
+```javascript
+// Configuración activa: config_1
+fetch('simulacion/config_1/datos_servidor.json')
+
+// Configuración activa: config_2
+fetch('simulacion/config_2/datos_servidor.json')
+```
+
+### Agregar Nueva Configuración
+
+1. **Agregar en `configuracion_grupos.json`**:
+
+```json
+{
+  "configuraciones": [
+    {
+      "id": "config_3",
+      "nombre": "Nueva Configuración",
+      "grupos": [
+        { "id": "grupo_1", "nombre": "Grupo A", "electores": 50000 }
+      ]
+    }
+  ]
+}
+```
+
+2. **Crear carpeta y archivo de datos**:
+
+```bash
+mkdir -p simulacion/config_3
+# Crear simulacion/config_3/datos_servidor.json
+```
+
+3. **Actualizar Service Worker** (`service-worker.js`):
+
+```javascript
+JSON: [
+    './configuracion_eleccion.json',
+    './configuracion_grupos.json',
+    './simulacion/config_1/datos_servidor.json',
+    './simulacion/config_2/datos_servidor.json',
+    './simulacion/config_3/datos_servidor.json',  // ← Agregar
+    './manifest.json'
+]
+```
+
+4. **Incrementar versión del caché JSON**:
+
+```javascript
+CACHE_VERSIONS = {
+    JSON: '1.1.1'  // ← Incrementar
+}
+```
 
 ## 🎨 Personalización
 

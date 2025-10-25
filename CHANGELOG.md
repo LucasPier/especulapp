@@ -1,4 +1,148 @@
-# 📝 Registro de Cambios - Refactorización de EspeculApp
+# 📝 Registro de Cambios - EspeculApp
+
+## Versión 1.1.0 - Múltiples Configuraciones de Grupos
+
+### Fecha: 25 de Octubre de 2025
+
+#### 🎉 Nuevas Funcionalidades
+
+##### 🔄 Sistema de Múltiples Configuraciones
+- ✅ **Selector de configuraciones**: Select para elegir entre diferentes agrupaciones electorales
+- ✅ **Configuraciones independientes**: Cada configuración mantiene su propio estado
+- ✅ **Persistencia separada**: Estados guardados independientemente en localStorage
+- ✅ **Datos por configuración**: Cada configuración consulta su propia fuente de datos
+
+##### 📊 Estructura de Datos Actualizada
+
+**`configuracion_grupos.json`** - Nueva estructura:
+```json
+{
+  "configuraciones": [
+    {
+      "id": "config_1",
+      "nombre": "Clústeres provinciales",
+      "grupos": [...]
+    },
+    {
+      "id": "config_2",
+      "nombre": "Proximidad territorial",
+      "grupos": [...]
+    }
+  ]
+}
+```
+
+**Antes**: Un solo array de grupos
+**Ahora**: Array de configuraciones, cada una con su propio array de grupos
+
+##### 🗂️ Organización de Datos del Servidor
+
+**Nueva estructura de carpetas**:
+```
+simulacion/
+├── config_1/
+│   └── datos_servidor.json
+└── config_2/
+    └── datos_servidor.json
+```
+
+**Antes**: `datos_servidor.json` en la raíz
+**Ahora**: `simulacion/{config_id}/datos_servidor.json`
+
+#### 📝 Cambios en el Código
+
+##### Variables Privadas
+- ✅ `configGrupoActiva`: Nueva variable para la configuración actual
+- ✅ `STORAGE_CONFIG_KEY`: Clave para persistir la configuración seleccionada
+
+##### Funciones Nuevas
+- ✅ `inicializarSelectorConfiguraciones()`: Renderiza el select con las opciones
+- ✅ `cambiarConfiguracionGrupos(configId)`: Cambia la configuración activa
+
+##### Funciones Modificadas
+- 🔄 `cargarConfiguraciones()`: Carga configuración activa desde localStorage
+- 🔄 `cargarDatosServidor()`: Construye ruta dinámica según configuración
+- 🔄 `cargarEstadoDesdeLocalStorage()`: Usa clave específica por configuración
+- 🔄 `guardarEstadoEnLocalStorage()`: Guarda con clave específica
+- 🔄 Todas las referencias `configGrupos.grupos` → `configGrupoActiva.grupos`
+
+#### 🎨 Cambios en la UI
+
+##### HTML (`index.html`)
+- ✅ Nuevo `<select id="selector-configuracion-grupos">` debajo del título
+- ✅ Opciones cargadas dinámicamente desde el JSON
+
+##### CSS (`styles.css`)
+- ✅ Nueva clase `.selector-configuracion-container`
+- ✅ Estilos para el select con hover y focus
+- ✅ Diseño responsive
+
+#### 💾 Service Worker Actualizado
+
+##### Versiones Incrementadas
+```javascript
+CACHE_VERSIONS = {
+    HTML: '1.1.0',  // Selector agregado
+    CSS: '1.1.0',   // Nuevos estilos
+    JS: '1.1.0',    // Nueva lógica
+    JSON: '1.1.0',  // Nueva estructura
+    IMG: '1.0.0'    // Sin cambios
+}
+```
+
+##### Recursos de Caché
+- ❌ Eliminado: `./datos_servidor.json`
+- ✅ Agregado: `./simulacion/config_1/datos_servidor.json`
+- ✅ Agregado: `./simulacion/config_2/datos_servidor.json`
+
+##### Estrategia de Fetch
+- 🔄 Detecta rutas dinámicas: `url.pathname.includes('/simulacion/')`
+- ✅ Network First para todos los archivos en `/simulacion/`
+
+#### 📚 Documentación Actualizada
+
+##### Archivos Modificados
+- 📖 `README.md`: Sección de múltiples configuraciones agregada
+- 📖 `API.md`: Documentación de nuevas funciones (pendiente)
+- 📖 `CHANGELOG.md`: Este archivo
+- 📖 `PWA.md`: Información de caché actualizada (pendiente)
+- 📖 `CACHE-FLOW.md`: Flujo de caché actualizado (pendiente)
+
+#### 🔧 localStorage Keys
+
+**Nuevas claves**:
+- `especulapp_config_grupos_activa`: ID de la configuración seleccionada
+- `especulapp_estado_config_1`: Estado de la configuración 1
+- `especulapp_estado_config_2`: Estado de la configuración 2
+
+**Obsoletas**:
+- `especulapp_estado`: Reemplazado por claves específicas por configuración
+
+#### ⚙️ Configuraciones Incluidas
+
+1. **Clústeres provinciales** (`config_1`)
+   - 12 grupos (Clúster 1-11 + Ciudades Chicas)
+   - Basado en agrupaciones tradicionales
+
+2. **Proximidad territorial** (`config_2`)
+   - 10 grupos (Rosario, Santa Fe, zonas rurales, etc.)
+   - Basado en ubicación geográfica
+
+#### 🎯 Comportamiento
+
+**Al cambiar de configuración**:
+1. Se limpia el estado actual
+2. Se carga el estado guardado de la nueva configuración
+3. Se consultan los datos del servidor de la nueva configuración
+4. Se re-renderizan todas las tarjetas de grupos
+5. Se recalculan los resultados globales
+
+**Persistencia**:
+- Cada configuración mantiene sus propios valores de asistencia, votos nulos, y distribución de frentes
+- Al volver a una configuración anterior, se restauran sus valores guardados
+- No hay interferencia entre configuraciones
+
+---
 
 ## Fecha: 19 de Octubre de 2025
 

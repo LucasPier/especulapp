@@ -406,6 +406,42 @@ section h2 {
     border-radius: 20px;
 }
 
+/* Selector de configuración de grupos */
+.selector-configuracion-container {
+    margin-bottom: 20px;
+}
+
+.selector-configuracion-container label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+    color: var(--text-color);
+}
+
+.selector-configuracion-container select {
+    width: 100%;
+    max-width: 400px;
+    padding: 10px 14px;
+    font-size: 14px;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    background-color: var(--card-background);
+    color: var(--text-color);
+    cursor: pointer;
+    transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+.selector-configuracion-container select:hover {
+    border-color: var(--accent-color);
+}
+
+.selector-configuracion-container select:focus {
+    outline: none;
+    border-color: var(--accent-color);
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+}
+
 /* Grupos Grid */
 .grupos-grid {
     display: grid;
