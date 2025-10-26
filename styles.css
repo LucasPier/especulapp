@@ -494,6 +494,7 @@ section h2 {
     margin-bottom: 10px;
     width: 100%;
     min-height: 230px;
+    overflow: visible;
 }
 
 /* Dos columnas cuando tiene ambos (imagen y perfil) */
@@ -515,7 +516,9 @@ section h2 {
     align-items: center;
     justify-content: center;
     max-height: 230px;
-    overflow: hidden;
+    overflow: visible;
+    cursor: pointer;
+    user-select: none;
 }
 
 .grupo-imagen img {
@@ -525,6 +528,17 @@ section h2 {
     width: 100%;
     height: 100%;
     object-fit: contain;
+    transition: transform 0.15s ease-out, filter 0.15s ease-out;
+    transform-origin: center center;
+}
+
+/* Efecto zoom al presionar la imagen */
+.grupo-imagen:active img {
+    transform: scale(2);
+    z-index: 1000;
+    filter: drop-shadow(0 0 6px rgba(255, 255, 255, 1)) 
+            drop-shadow(0 0 10px rgba(255, 255, 255, 1))
+            drop-shadow(0 0 14px rgba(255, 255, 255, 0.8));
 }
 
 /* Cuando la imagen está en dos columnas */

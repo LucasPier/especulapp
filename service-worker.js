@@ -33,7 +33,7 @@
 // ⚠️ IMPORTANTE: Incrementa solo la versión del grupo que modificaste
 const CACHE_VERSIONS = {
     HTML: '1.2.0',    // Agregado script local de Plotly
-    CSS: '1.3.1',     // Refinamientos visuales: alturas, colores coherentes (#ecf0f1), sombreados
+    CSS: '1.3.2',     // Ampliación de imágenes de clústeres
     JS: '1.3.2',      // Fix: thumb de votos blancos mantiene color constante (#95a5a6)
     JSON: '1.3.0',    // Agregada propiedad "imagen" en configuracion_eleccion.json
     IMG: '1.3.1'      // Imágenes para los clústeres/grupos
