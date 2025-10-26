@@ -32,11 +32,11 @@
 // ====================================
 // ⚠️ IMPORTANTE: Incrementa solo la versión del grupo que modificaste
 const CACHE_VERSIONS = {
-    HTML: '1.1.1',    // Animaciones con transform para reordenamiento
-    CSS: '1.1.1',     // Animaciones con transform para reordenamiento
-    JS: '1.1.2',      // Fix duplicación tarjetas en cambio de configuración
-    JSON: '1.1.0',    // Múltiples configuraciones de grupos
-    IMG: '1.0.0'
+    HTML: '1.2.0',    // Agregado script local de Plotly
+    CSS: '1.2.3',     // Imágenes y perfiles para grupos electorales
+    JS: '1.2.0',      // Renderizado de imágenes y gráficos de perfiles con Plotly
+    JSON: '1.2.0',    // Agregadas propiedades imagen/perfil en configuracion_grupos.json + perfiles/
+    IMG: '1.2.0'      // Agregadas imágenes de clusters de grupos
 };
 
 // Prefijo base para todos los cachés
@@ -65,7 +65,8 @@ const CACHE_RESOURCES = {
         './styles.css'
     ],
     JS: [
-        './app.js'
+        './app.js',
+        './js/plotly-3.1.2.min.js'
     ],
     JSON: [
         './configuracion_eleccion.json',
@@ -73,12 +74,27 @@ const CACHE_RESOURCES = {
         // Datos del servidor por configuración
         './simulacion/config_1/datos_servidor.json',  // Clústeres provinciales
         './simulacion/config_2/datos_servidor.json',  // Proximidad territorial
+        // Perfiles electorales (elección anterior) por configuración
+        './perfiles/config_1/perfiles.json',  // Perfiles de clústeres provinciales
         './manifest.json'
     ],
     IMG: [
         './img/icono.svg',
         './img/icono128.png',
-        './img/icono512.png'
+        './img/icono512.png',
+        // Imágenes de clusters/grupos
+        './img/clusteres/cluster_grupo_1.webp',
+        './img/clusteres/cluster_grupo_2.webp',
+        './img/clusteres/cluster_grupo_3.webp',
+        './img/clusteres/cluster_grupo_4.webp',
+        './img/clusteres/cluster_grupo_5.webp',
+        './img/clusteres/cluster_grupo_6.webp',
+        './img/clusteres/cluster_grupo_7.webp',
+        './img/clusteres/cluster_grupo_8.webp',
+        './img/clusteres/cluster_grupo_9.webp',
+        './img/clusteres/cluster_grupo_10.webp',
+        './img/clusteres/cluster_grupo_11.webp',
+        './img/clusteres/cluster_grupo_12.webp'
     ]
 };
 
@@ -198,6 +214,26 @@ self.addEventListener('fetch', (event) => {
                 if (url.pathname.endsWith('datos_servidor.json') || 
                     url.pathname.includes('/simulacion/')) {
                     return await fetchWithCacheFallback(request);
+                }
+                
+                // ESTRATEGIA CACHE FIRST PARA PERFILES
+                // Los archivos perfiles.json son estáticos pero se solicitan con cache-busting
+                // Necesitamos normalizar la URL para que coincida con la cacheada
+                if (url.pathname.includes('/perfiles/') && url.pathname.endsWith('perfiles.json')) {
+                    // Crear request sin query params para buscar en caché
+                    const normalizedUrl = url.origin + url.pathname;
+                    const normalizedRequest = new Request(normalizedUrl);
+                    
+                    const cachedResponse = await caches.match(normalizedRequest);
+                    
+                    if (cachedResponse) {
+                        // console.log(`[SW] 📦 Servido desde caché (normalizado): ${url.pathname}`);
+                        return cachedResponse;
+                    }
+                    
+                    // Si no está en caché, obtener de la red sin cache-busting
+                    console.log(`[SW] 🌐 Obteniendo de la red: ${url.pathname}`);
+                    return await fetchWithCacheFallback(normalizedRequest);
                 }
                 
                 // ESTRATEGIA ESTÁNDAR: Cache First

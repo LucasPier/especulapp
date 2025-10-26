@@ -12,6 +12,7 @@ const EspeculApp = (function() {
     let estadoGrupos = {};
     let incluirBlancosComoValidos = true;
     let datosServidor = null;
+    let datosPerfiles = null; // Datos de perfiles electorales (elección anterior)
     let gruposConDatosReales = new Set();
     let intervaloPolleoId = null;
     let ultimaConsulta = null;
@@ -366,6 +367,9 @@ async function cambiarConfiguracionGrupos(configId) {
     const gruposGrid = document.getElementById('grupos-grid');
     gruposGrid.innerHTML = '';
 
+    // Cargar datos de perfiles para la nueva configuración
+    await cargarDatosPerfiles();
+
     // Cargar datos del servidor para la nueva configuración
     // (esto llamará a renderizarUI() que creará las tarjetas)
     await cargarDatosServidor();
@@ -420,6 +424,38 @@ async function cambiarConfiguracionGrupos(configId) {
     } catch (error) {
         console.warn('⚠️ Error al cargar datos del servidor:', error);
         // No mostrar alerta, puede ser que aún no haya datos disponibles
+    }
+}
+
+// Cargar datos de perfiles electorales (elección anterior)
+async function cargarDatosPerfiles() {
+    // Verificar si algún grupo de la configuración activa tiene perfil activado
+    const tieneGruposConPerfil = configGrupoActiva.grupos.some(grupo => grupo.perfil === true);
+    
+    if (!tieneGruposConPerfil) {
+        datosPerfiles = null;
+        return;
+    }
+    
+    try {
+        const rutaPerfiles = `perfiles/${configGrupoActiva.id}/perfiles.json`;
+        const timestamp = new Date().getTime();
+        
+        const respuesta = await fetch(`${rutaPerfiles}?t=${timestamp}`, {
+            cache: 'no-store',
+            headers: {
+                'Cache-Control': 'no-cache, no-store, must-revalidate',
+                'Pragma': 'no-cache'
+            }
+        });
+        
+        if (respuesta.ok) {
+            datosPerfiles = await respuesta.json();
+        } else {
+            datosPerfiles = null;
+        }
+    } catch (error) {
+        datosPerfiles = null;
     }
 }
 
@@ -647,6 +683,94 @@ async function cambiarConfiguracionGrupos(configId) {
     }
     // Para todos los demás (frentes y blancos), usar círculo de color
     return `<span class="color-indicator" style="background-color: ${resultado.color}"></span>`;
+}
+
+// Renderizar gráfico de perfil electoral (elección anterior)
+function renderizarGraficoPerfil(contenedor, grupoId) {
+    // Verificar que tengamos datos de perfiles
+    if (!datosPerfiles) {
+        console.log(`ℹ️ No hay datos de perfiles disponibles`);
+        return;
+    }
+    
+    // Buscar los datos del grupo
+    const datosPerfil = datosPerfiles.find(p => p.id === grupoId);
+    if (!datosPerfil) {
+        console.log(`ℹ️ No hay datos de perfil para ${grupoId}`);
+        return;
+    }
+    
+    // Preparar datos para el gráfico polar
+    const valores = datosPerfil.valores;
+    
+    // Agrupar NULOS, BLANCOS y OTROS en un solo valor promedio
+    const otrosProm = (
+        valores.NULOS +
+        valores.BLANCOS +
+        valores.OTROS
+    ) / 3;
+    
+    // Definir los ejes y valores en el orden deseado
+    const partidos = [
+        "JXC",
+        "FAP",
+        "FDT",
+        "NULOS / BLANCOS / OTROS"
+    ];
+    
+    const valoresGrafico = [
+        valores.JXC,
+        valores.FAP,
+        valores.FDT,
+        otrosProm
+    ];
+    
+    // Cerrar el polígono
+    partidos.push(partidos[0]);
+    valoresGrafico.push(valoresGrafico[0]);
+    
+    // Configurar el trace
+    const trace = {
+        type: "scatterpolar",
+        r: valoresGrafico,
+        theta: partidos,
+        fill: "toself",
+        name: "Perfil Electoral",
+        line: { color: "#1f77b4", width: 2 },
+        fillcolor: "rgba(31,119,180,0.4)",
+        hovertemplate: "%{theta}: %{r:.0%}<extra></extra>"
+    };
+    
+    // Configurar el layout
+    const layout = {
+        polar: {
+            radialaxis: {
+                visible: true,
+                range: [0, 0.6],
+                tickformat: ".0%",
+                tickfont: { size: 10 },
+                showline: false
+            },
+            angularaxis: {
+                rotation: 0,
+                direction: "counterclockwise",
+                tickfont: { size: 10, family: "system-ui, sans-serif" }
+            }
+        },
+        showlegend: false,
+        margin: { t: 30, b: 40, l: 40, r: 40 },
+        paper_bgcolor: "white",
+        plot_bgcolor: "white"
+    };
+    
+    // Configurar opciones
+    const config = {
+        responsive: true,
+        displayModeBar: false
+    };
+    
+    // Renderizar el gráfico
+    Plotly.newPlot(contenedor, [trace], layout, config);
 }
 
 // Renderizar interfaz de usuario
@@ -877,6 +1001,34 @@ async function cambiarConfiguracionGrupos(configId) {
         : '0,00';
     const escrutado = formatearPorcentaje(datosGrupo.porcentaje_escrutado, 1);
     
+    // Generar HTML para la sección de imagen/perfil con dos columnas si existe alguno
+    const tieneImagen = grupo.imagen !== null && grupo.imagen !== undefined;
+    const tienePerfil = grupo.perfil === true;
+    
+    let infoHTML = '';
+    if (tieneImagen || tienePerfil) {
+        // Determinar número de columnas
+        const numColumnas = (tieneImagen && tienePerfil) ? 2 : 1;
+        
+        infoHTML = `<div class="grupo-info-container" data-columnas="${numColumnas}">`;
+        
+        if (tieneImagen) {
+            infoHTML += `
+                <div class="grupo-imagen">
+                    <img src="${grupo.imagen}" alt="${grupo.nombre}" loading="lazy">
+                </div>`;
+        }
+        
+        if (tienePerfil) {
+            infoHTML += `
+                <div class="grupo-perfil">
+                    <!-- Espacio reservado para información interactiva -->
+                </div>`;
+        }
+        
+        infoHTML += '</div>';
+    }
+    
     card.innerHTML = `
         <div class="grupo-header">
             <div class="grupo-nombre">
@@ -884,6 +1036,7 @@ async function cambiarConfiguracionGrupos(configId) {
                 <span class="badge-datos-reales">📊 DATOS REALES</span>
             </div>
             <div class="grupo-electores">👥 ${formatearNumero(datosGrupo.electores)} electores</div>
+            ${infoHTML}
             <div class="grupo-info-escrutinio">
                 <div>✅ Escrutado: ${escrutado}%</div>
                 <div>📈 Participación: ${participacion}%</div>
@@ -908,6 +1061,17 @@ async function cambiarConfiguracionGrupos(configId) {
     const graficoBarras = card.querySelector('.grupo-grafico-barras');
     if (graficoBarras) {
         renderizarGraficoMini(graficoBarras, resultados);
+    }
+    
+    // Renderizar gráfico de perfil si corresponde
+    if (tienePerfil) {
+        const contenedorPerfil = card.querySelector('.grupo-perfil');
+        if (contenedorPerfil) {
+            // Usar setTimeout para asegurar que el DOM esté completamente renderizado
+            setTimeout(() => {
+                renderizarGraficoPerfil(contenedorPerfil, grupo.id);
+            }, 0);
+        }
     }
 }
 
@@ -1041,6 +1205,34 @@ async function cambiarConfiguracionGrupos(configId) {
     });
     botoneraHTML += '</div>';
 
+    // Generar HTML para la sección de imagen/perfil con dos columnas si existe alguno
+    const tieneImagen = grupo.imagen !== null && grupo.imagen !== undefined;
+    const tienePerfil = grupo.perfil === true;
+    
+    let infoHTML = '';
+    if (tieneImagen || tienePerfil) {
+        // Determinar número de columnas
+        const numColumnas = (tieneImagen && tienePerfil) ? 2 : 1;
+        
+        infoHTML = `<div class="grupo-info-container" data-columnas="${numColumnas}">`;
+        
+        if (tieneImagen) {
+            infoHTML += `
+                <div class="grupo-imagen">
+                    <img src="${grupo.imagen}" alt="${grupo.nombre}" loading="lazy">
+                </div>`;
+        }
+        
+        if (tienePerfil) {
+            infoHTML += `
+                <div class="grupo-perfil">
+                    <!-- Espacio reservado para información interactiva -->
+                </div>`;
+        }
+        
+        infoHTML += '</div>';
+    }
+
     card.innerHTML = `
         <div class="grupo-header">
             <div class="grupo-nombre">
@@ -1048,6 +1240,7 @@ async function cambiarConfiguracionGrupos(configId) {
                 <span class="badge-simulacion">🎯 SIMULACIÓN</span>
             </div>
             <div class="grupo-electores">👥 ${formatearNumero(grupo.electores)} electores</div>
+            ${infoHTML}
             ${botoneraHTML}
         </div>
         <div class="grupo-controles">
@@ -1064,6 +1257,14 @@ async function cambiarConfiguracionGrupos(configId) {
         sincronizarInputsConEstado(grupo.id);
         actualizarLabelsGrupo(grupo.id);
         actualizarColoresRangeGrupo(grupo.id);
+        
+        // Renderizar gráfico de perfil si corresponde
+        if (tienePerfil) {
+            const contenedorPerfil = card.querySelector('.grupo-perfil');
+            if (contenedorPerfil) {
+                renderizarGraficoPerfil(contenedorPerfil, grupo.id);
+            }
+        }
     }, 0);
 }
 
@@ -2345,6 +2546,7 @@ function actualizarBarraMiniExistente(barraDiv, resultado) {
 
         try {
             await cargarConfiguraciones();
+            await cargarDatosPerfiles(); // Cargar datos de perfiles electorales
             await cargarDatosServidor(); // Cargar datos reales del servidor
             cargarEstadoDesdeLocalStorage(); // Cargar estado guardado
             inicializarEstadoGrupos();
@@ -2398,7 +2600,7 @@ function actualizarBarraMiniExistente(barraDiv, resultado) {
         init,
         destroy,
         isReady,
-        version: '1.1.2'
+        version: '1.2.0'
     };
 })();
 

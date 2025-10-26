@@ -9,6 +9,8 @@ Incluye los archivos necesarios en tu HTML:
 
 ```html
 <link rel="stylesheet" href="styles.css">
+<!-- Plotly para gráficos de perfiles electorales -->
+<script src="js/plotly-3.1.2.min.js"></script>
 <script src="app.js"></script>
 ```
 
@@ -140,8 +142,41 @@ async function iniciarCuandoSeaNecesario() {
 La aplicación requiere los siguientes archivos JSON en el mismo directorio:
 
 1. **configuracion_eleccion.json**: Define frentes, escenarios y porcentajes
-2. **configuracion_grupos.json**: Define múltiples configuraciones de grupos electorales
+2. **configuracion_grupos.json**: Define múltiples configuraciones de grupos electorales con propiedades opcionales de `imagen` y `perfil`
 3. **simulacion/{config_id}/datos_servidor.json**: Proporciona datos en tiempo real por configuración (opcional)
+4. **perfiles/{config_id}/perfiles.json**: Datos de elecciones anteriores para gráficos de perfiles (opcional)
+
+#### Propiedades Opcionales de Grupos
+
+Cada grupo en `configuracion_grupos.json` puede incluir:
+
+```json
+{
+  "id": "grupo_1",
+  "nombre": "Clúster 1",
+  "electores": 135668,
+  "imagen": "img/clusteres/cluster_grupo_1.webp",  // Ruta a imagen o null
+  "perfil": true  // true para mostrar gráfico de perfil electoral
+}
+```
+
+**`imagen` (string | null)**:
+- Ruta relativa a una imagen representativa del grupo
+- Si es `null`, no se muestra imagen
+- Formato recomendado: WebP para mejor rendimiento
+- Se muestra en una columna de 40% del ancho de la tarjeta
+
+**`perfil` (boolean)**:
+- `true`: Renderiza gráfico polar de Plotly con resultados de elección anterior
+- `false`: No muestra gráfico de perfil
+- Requiere datos en `perfiles/{config_id}/perfiles.json`
+- Se muestra en una columna de 60% del ancho de la tarjeta
+- Independiente de la propiedad `imagen`
+
+**Layout Responsivo**:
+- 2 columnas (40% imagen / 60% perfil) si ambos están presentes
+- 1 columna si solo hay imagen o solo perfil
+- Los controles de simulación se mantienen siempre debajo
 
 ### Estructura HTML Requerida
 
@@ -227,5 +262,5 @@ Para reportar bugs o solicitar features, contactar al equipo de Ciudad Futura.
 
 ---
 
-**Versión**: 1.1.0  
+**Versión**: 1.2.0  
 **Última actualización**: Octubre 2025

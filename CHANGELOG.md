@@ -1,5 +1,159 @@
 # 📝 Registro de Cambios - EspeculApp
 
+## Versión 1.2.0 - Imágenes y Perfiles Electorales
+
+### Fecha: 25 de Octubre de 2025
+
+#### ✨ Nuevas Funcionalidades
+
+##### 🖼️ Sistema de Imágenes de Grupos
+- ✅ **Imágenes opcionales**: Cada grupo puede tener una imagen representativa
+- ✅ **Propiedad `imagen`**: String con ruta relativa o `null` en `configuracion_grupos.json`
+- ✅ **Layout responsive**: Imágenes ocupan 40% del ancho en layout de 2 columnas
+- ✅ **Formato optimizado**: Soporte para WebP y centrado vertical automático
+- ✅ **Estructura flexible**: Si no hay imagen, el layout se adapta a 1 columna
+
+##### 📈 Perfiles Electorales con Plotly
+- ✅ **Gráficos de elección anterior**: Muestra resultados históricos con gráficos polares interactivos
+- ✅ **Propiedad `perfil`**: Boolean en cada grupo para activar/desactivar gráfico
+- ✅ **Archivo de datos**: `perfiles/{config_id}/perfiles.json` con resultados anteriores
+- ✅ **Librería Plotly local**: Descargada versión 3.1.2 para uso offline
+- ✅ **Layout responsive**: Perfiles ocupan 60% del ancho en layout de 2 columnas
+- ✅ **Independiente de imágenes**: Funciona con o sin imagen del grupo
+- ✅ **Carga condicional**: Solo intenta cargar perfiles si algún grupo tiene `perfil: true`
+
+##### 🎨 Layout de 2 Columnas
+- ✅ **Contenedor `grupo-info-container`**: Grid CSS responsive
+- ✅ **Atributo `data-columnas`**: Controla dinámicamente 1 o 2 columnas
+- ✅ **40% / 60% split**: Imagen a la izquierda, perfil a la derecha
+- ✅ **Centrado vertical**: Imágenes y gráficos centrados con flexbox
+- ✅ **Altura mínima**: 250px para mantener proporciones visuales
+
+#### 🔧 Mejoras Técnicas
+
+##### JavaScript (`app.js`)
+**Nuevas Funciones**:
+- `cargarDatosPerfiles()`: Carga datos de perfiles electorales por configuración
+  - Verifica si algún grupo tiene `perfil: true` antes de hacer fetch
+  - Manejo de errores silencioso para configuraciones sin perfiles
+  - Cache-busting con timestamp
+- `renderizarGraficoPerfil(contenedor, grupoId)`: Renderiza gráfico polar con Plotly
+  - 4 ejes: JXC, FAP, FDT, NULOS/BLANCOS/OTROS (agregados)
+  - Márgenes ajustados: `{t:30, b:40, l:40, r:40}` para visibilidad de etiquetas
+  - Rango personalizado: `[0, 0.6]` para escala apropiada
+  - Color azul `#1f77b4` para diferenciar de simulación actual
+
+**Funciones Modificadas**:
+- `cambiarConfiguracionGrupos()`: Llama a `cargarDatosPerfiles()` al cambiar configuración
+- `renderizarGrupoConDatosReales()`: Renderiza imagen y perfil si están configurados
+- `renderizarGrupoSimulacion()`: Renderiza imagen y perfil si están configurados
+
+##### CSS (`styles.css`)
+**Nuevas Clases**:
+```css
+.grupo-info-container {
+  display: grid;
+  gap: 10px;
+  min-height: 250px;
+}
+
+.grupo-info-container[data-columnas="2"] {
+  grid-template-columns: 40% 60%;  /* Imagen | Perfil */
+}
+
+.grupo-info-container[data-columnas="1"] {
+  grid-template-columns: 1fr;  /* Solo uno disponible */
+}
+
+.grupo-imagen {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.grupo-perfil {
+  min-height: 250px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+```
+
+##### HTML (`index.html`)
+- ✅ Agregado script de Plotly local: `<script src="js/plotly-3.1.2.min.js"></script>`
+
+##### Service Worker (`service-worker.js`)
+**Versiones de Caché Actualizadas a 1.2.0**:
+- `HTML`: Agregado script local de Plotly
+- `CSS`: Nuevas clases para imágenes y perfiles de grupos
+- `JS`: Renderizado de imágenes y gráficos de perfiles con Plotly
+- `JSON`: Agregadas propiedades imagen/perfil + archivo `perfiles/config_1/perfiles.json`
+- `IMG`: Agregadas 12 imágenes de clusters (`cluster_grupo_1.webp` - `cluster_grupo_12.webp`)
+
+**Nuevos Archivos en Caché**:
+- `./js/plotly-3.1.2.min.js`
+- `./perfiles/config_1/perfiles.json`
+- `./img/clusteres/cluster_grupo_1.webp` (x12)
+
+#### 📁 Estructura de Archivos
+
+**Nuevos Archivos/Directorios**:
+```
+js/
+└── plotly-3.1.2.min.js          # Librería Plotly local (4.7MB)
+perfiles/
+└── config_1/
+    └── perfiles.json             # Resultados elección anterior
+img/
+└── clusteres/
+    ├── cluster_grupo_1.webp
+    ├── cluster_grupo_2.webp
+    └── ... (hasta cluster_grupo_12.webp)
+```
+
+#### 📝 Configuración
+
+**`configuracion_grupos.json` actualizado**:
+```json
+{
+  "id": "grupo_1",
+  "nombre": "Clúster 1",
+  "electores": 135668,
+  "imagen": "img/clusteres/cluster_grupo_1.webp",
+  "perfil": true
+}
+```
+
+**`perfiles/config_1/perfiles.json`**:
+```json
+[
+  {
+    "id": "grupo_1",
+    "valores": {
+      "JXC": 0.28,
+      "FDT": 0.42,
+      "FAP": 0.18,
+      "BLANCOS": 0.05,
+      "NULOS": 0.03,
+      "OTROS": 0.04
+    }
+  }
+]
+```
+
+#### 🐛 Correcciones
+- ✅ Error al cargar config_2 sin archivo de perfiles solucionado
+- ✅ Gráficos se centran verticalmente correctamente
+- ✅ Etiquetas de gráficos polares totalmente visibles con márgenes apropiados
+
+#### 📚 Documentación
+- ✅ README.md actualizado con sección de Perfiles y Imágenes
+- ✅ API.md documentado con nuevas propiedades `imagen` y `perfil`
+- ✅ Versión actualizada a 1.2.0 en todos los archivos de documentación
+
+---
+
 ## Versión 1.1.2 - Corrección Cambio de Configuración
 
 ### Fecha: 25 de Octubre de 2025

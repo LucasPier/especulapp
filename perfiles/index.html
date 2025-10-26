@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Clusters Electorales</title>
+  <script src="https://cdn.plot.ly/plotly-3.1.2.min.js"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background: #fff;
+      color: #333;
+    }
+    #selector {
+      display: block;
+      width: 100%;
+      font-size: 0.9rem;
+      padding: 0.4rem;
+      margin-bottom: 0.5rem;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    #chart {
+      width: 100%;
+      height: calc(100vh - 50px);
+    }
+  </style>
+</head>
+<body>
+  <select id="selector"></select>
+  <div id="chart"></div>
+
+  <script>
+    async function init() {
+      const res = await fetch("clusters_promedios.json");
+      const data = await res.json();
+
+      const selector = document.getElementById("selector");
+      const chart = document.getElementById("chart");
+
+      // Rellenar selector
+      data.forEach(d => {
+        const opt = document.createElement("option");
+        opt.value = d.grupo;
+        opt.textContent = `Cluster ${d.grupo}`;
+        selector.appendChild(opt);
+      });
+
+      // Función para graficar
+      function draw(clusterId) {
+        const cluster = data.find(d => d.grupo == clusterId);
+
+        // Agrupamos NULOS, BLANCOS y OTROS en un solo valor
+        const otrosProm = (
+          cluster.valores["NULOS"] +
+          cluster.valores["BLANCOS"] +
+          cluster.valores["OTROS"]
+        ) / 3;
+
+        // Definimos los ejes en el orden que queremos que se distribuyan en el círculo
+        const partidos = [
+          "JXC",             // derecha (0°)
+          "FAP",        // arriba a la derecha (~45°)
+          "FDT",                  // izquierda (180°)
+          "NULOS / BLANCOS / OTROS"           // abajo (~270°)
+        ];
+
+        const valores = [
+          cluster.valores["JXC"],
+          cluster.valores["FAP"],
+          cluster.valores["FDT"],
+          otrosProm
+        ];
+
+        // cerrar el polígono
+        partidos.push(partidos[0]);
+        valores.push(valores[0]);
+
+        const trace = {
+          type: "scatterpolar",
+          r: valores,
+          theta: partidos,
+          fill: "toself",
+          name: `Cluster ${clusterId}`,
+          line: { color: "#1f77b4", width: 2 },
+          fillcolor: "rgba(31,119,180,0.4)",
+          hovertemplate: "%{theta}: %{r:.0%}<extra></extra>"
+        };
+
+        const layout = {
+          polar: {
+            radialaxis: {
+              visible: true,
+              range: [0, 0.6],
+              tickformat: ".0%",
+              tickfont: { size: 11 },
+              showline: false
+            },
+            angularaxis: {
+              rotation: 0,
+              direction: "counterclockwise",
+              tickfont: { size: 12, family: "system-ui, sans-serif" }
+            }
+          },
+          showlegend: false,
+          margin: { t: 20, b: 20, l: 40, r: 40 },
+          paper_bgcolor: "white",
+          plot_bgcolor: "white"
+        };
+
+        const config = {
+          responsive: true,
+          displayModeBar: false
+        };
+
+        Plotly.newPlot(chart, [trace], layout, config);
+      }
+
+      // Inicializar
+      selector.addEventListener("change", e => draw(e.target.value));
+      draw(data[0].grupo);
+    }
+
+    init();
+  </script>
+</body>
+</html>

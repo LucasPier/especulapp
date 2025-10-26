@@ -1,6 +1,6 @@
 # EspeculApp - Simulador Electoral
 
-![Versión](https://img.shields.io/badge/versi%C3%B3n-1.1.0-blue)
+![Versión](https://img.shields.io/badge/versi%C3%B3n-1.2.0-blue)
 ![JavaScript](https://img.shields.io/badge/JavaScript-ES6+-yellow)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
@@ -9,12 +9,14 @@ Una librería JavaScript encapsulada para simular escenarios electorales con int
 ## 🚀 Características
 
 - ✅ **Encapsulada y sin conflictos**: Expone solo un objeto global `EspeculApp`
-- � **Múltiples configuraciones**: Selecciona entre diferentes agrupaciones electorales
-- �📊 **Datos en tiempo real**: Polling automático cada 60 segundos por configuración
+- 🔄 **Múltiples configuraciones**: Selecciona entre diferentes agrupaciones electorales
+- 📊 **Datos en tiempo real**: Polling automático cada 60 segundos por configuración
+- 🖼️ **Imágenes de grupos**: Soporte opcional para mostrar imágenes representativas
+- 📈 **Perfiles electorales**: Gráficos interactivos de resultados de elecciones anteriores con Plotly
 - 💾 **Persistencia automática**: Guarda el estado independiente de cada configuración
 - 🎨 **Interfaz responsiva**: Funciona en desktop, tablet y móvil
 - 🎯 **Simulaciones interactivas**: Controles de slider para ajustar parámetros
-- 📈 **Visualización dinámica**: Gráficos de barras actualizados en tiempo real
+- � **Visualización dinámica**: Gráficos de barras actualizados en tiempo real
 - 📱 **Progressive Web App**: Funciona offline e instalable en cualquier dispositivo
 
 ## 📦 Instalación
@@ -26,6 +28,8 @@ Una librería JavaScript encapsulada para simular escenarios electorales con int
 <html lang="es">
 <head>
     <link rel="stylesheet" href="styles.css">
+    <!-- Plotly para gráficos de perfiles -->
+    <script src="js/plotly-3.1.2.min.js"></script>
 </head>
 <body>
     <!-- Tu estructura HTML -->
@@ -117,7 +121,7 @@ Verifica si la aplicación está inicializada.
 Versión actual de la librería.
 
 - **Tipo**: `string`
-- **Valor**: `"1.1.0"`
+- **Valor**: `"1.2.0"`
 
 ## 📁 Estructura de Archivos
 
@@ -133,6 +137,19 @@ especulapp/
 │   │   └── datos_servidor.json    # Datos para configuración 1
 │   └── config_2/
 │       └── datos_servidor.json    # Datos para configuración 2
+├── perfiles/                       # Perfiles electorales (elección anterior) por configuración
+│   └── config_1/
+│       └── perfiles.json           # Perfiles para configuración 1
+├── js/
+│   └── plotly-3.1.2.min.js        # Librería Plotly para gráficos de perfiles
+├── img/
+│   ├── icono.svg                   # Icono de la aplicación
+│   ├── icono128.png
+│   ├── icono512.png
+│   └── clusteres/                  # Imágenes de grupos/clusters
+│       ├── cluster_grupo_1.webp
+│       ├── cluster_grupo_2.webp
+│       └── ...
 ├── service-worker.js               # Service Worker para PWA
 ├── manifest.json                   # Manifiesto de la PWA
 ├── API.md                          # Documentación completa de la API
@@ -185,12 +202,16 @@ Define múltiples configuraciones de grupos electorales:
         {
           "id": "grupo_1",
           "nombre": "Clúster 1",
-          "electores": 135668
+          "electores": 135668,
+          "imagen": "img/clusteres/cluster_grupo_1.webp",
+          "perfil": true
         },
         {
           "id": "grupo_2",
           "nombre": "Clúster 2",
-          "electores": 329783
+          "electores": 329783,
+          "imagen": "img/clusteres/cluster_grupo_2.webp",
+          "perfil": true
         }
       ]
     },
@@ -201,12 +222,16 @@ Define múltiples configuraciones de grupos electorales:
         {
           "id": "grupo_1",
           "nombre": "Ciudad de Rosario",
-          "electores": 820000
+          "electores": 820000,
+          "imagen": null,
+          "perfil": false
         },
         {
           "id": "grupo_2",
           "nombre": "Cordón Industrial",
-          "electores": 280000
+          "electores": 280000,
+          "imagen": null,
+          "perfil": false
         }
       ]
     }
@@ -247,6 +272,69 @@ Ejemplo para `simulacion/config_1/datos_servidor.json`:
 ```
 
 **Nota**: Cada configuración tiene su propio archivo de datos del servidor en su respectiva carpeta.
+
+### Perfiles Electorales (Elección Anterior)
+
+Los perfiles muestran resultados de elecciones anteriores con gráficos interactivos de Plotly:
+
+**Ruta**: `perfiles/{config_id}/perfiles.json`
+
+Ejemplo para `perfiles/config_1/perfiles.json`:
+
+```json
+[
+  {
+    "id": "grupo_1",
+    "valores": {
+      "JXC": 0.28,
+      "FDT": 0.42,
+      "FAP": 0.18,
+      "BLANCOS": 0.05,
+      "NULOS": 0.03,
+      "OTROS": 0.04
+    }
+  },
+  {
+    "id": "grupo_2",
+    "valores": {
+      "JXC": 0.35,
+      "FDT": 0.38,
+      "FAP": 0.15,
+      "BLANCOS": 0.06,
+      "NULOS": 0.02,
+      "OTROS": 0.04
+    }
+  }
+]
+```
+
+**Características**:
+- Los valores son proporciones (suman 1.0)
+- Se muestran como gráficos polares con Plotly
+- Los gráficos se renderizarán solo si el grupo tiene `"perfil": true`
+- Independiente del sistema de imágenes
+
+### Imágenes de Grupos
+
+Las imágenes representativas de grupos se configuran opcionalmente:
+
+**Propiedad**: `imagen` en cada grupo de `configuracion_grupos.json`
+
+```json
+{
+  "id": "grupo_1",
+  "nombre": "Clúster 1",
+  "electores": 135668,
+  "imagen": "img/clusteres/cluster_grupo_1.webp",  // Ruta a la imagen o null
+  "perfil": true  // Si tiene gráfico de perfil electoral
+}
+```
+
+**Características**:
+- Formato recomendado: WebP para mejor rendimiento
+- Si `imagen` es `null`, no se muestra imagen
+- Si `perfil` es `true`, se renderiza gráfico de elección anterior
+- Layout responsivo de 2 columnas (40% imagen, 60% perfil) o 1 columna si falta alguno
 
 ## 🔧 Desarrollo
 

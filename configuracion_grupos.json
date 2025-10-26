@@ -2,67 +2,91 @@
   "configuraciones": [
     {
       "id": "config_1",
-      "nombre": "Clústeres provinciales",
+      "nombre": "Clústeres provinciales - DN SF 2021",
       "grupos": [
         {
           "id": "grupo_1",
           "nombre": "Clúster 1",
-          "electores": 135668
+          "electores": 135668,
+          "imagen": "img/clusteres/cluster_grupo_1.webp",
+          "perfil": true
         },
         {
           "id": "grupo_2",
           "nombre": "Clúster 2",
-          "electores": 329783
+          "electores": 329783,
+          "imagen": "img/clusteres/cluster_grupo_2.webp",
+          "perfil": true
         },
         {
           "id": "grupo_3",
           "nombre": "Clúster 3",
-          "electores": 459635
+          "electores": 459635,
+          "imagen": "img/clusteres/cluster_grupo_3.webp",
+          "perfil": true
         },
         {
           "id": "grupo_4",
           "nombre": "Clúster 4",
-          "electores": 313881
+          "electores": 313881,
+          "imagen": "img/clusteres/cluster_grupo_4.webp",
+          "perfil": true
         },
         {
           "id": "grupo_5",
           "nombre": "Clúster 5",
-          "electores": 42622
+          "electores": 42622,
+          "imagen": "img/clusteres/cluster_grupo_5.webp",
+          "perfil": true
         },
         {
           "id": "grupo_6",
           "nombre": "Clúster 6",
-          "electores": 248260
+          "electores": 248260,
+          "imagen": "img/clusteres/cluster_grupo_6.webp",
+          "perfil": true
         },
         {
           "id": "grupo_7",
           "nombre": "Clúster 7",
-          "electores": 104620
+          "electores": 104620,
+          "imagen": "img/clusteres/cluster_grupo_7.webp",
+          "perfil": true
         },
         {
           "id": "grupo_8",
           "nombre": "Clúster 8",
-          "electores": 503755
+          "electores": 503755,
+          "imagen": "img/clusteres/cluster_grupo_8.webp",
+          "perfil": true
         },
         {
           "id": "grupo_9",
           "nombre": "Clúster 9",
-          "electores": 167129
+          "electores": 167129,
+          "imagen": "img/clusteres/cluster_grupo_9.webp",
+          "perfil": true
         },
         {
           "id": "grupo_10",
           "nombre": "Clúster 10",
-          "electores": 120761
+          "electores": 120761,
+          "imagen": "img/clusteres/cluster_grupo_10.webp",
+          "perfil": true
         },    
         {
           "id": "grupo_11",
           "nombre": "Clúster 11",
-          "electores": 135668
+          "electores": 135668,
+          "imagen": "img/clusteres/cluster_grupo_11.webp",
+          "perfil": true
         },
         {
           "id": "grupo_12",
           "nombre": "Ciudades Chicas",
-          "electores": 303124
+          "electores": 303124,
+          "imagen": "img/clusteres/cluster_grupo_12.webp",
+          "perfil": false
         }
       ]
     },
@@ -73,52 +97,72 @@
         {
           "id": "grupo_1",
           "nombre": "Ciudad de Rosario",
-          "electores": 820000
+          "electores": 820000,
+          "imagen": null,
+          "perfil": false
         },
         {
           "id": "grupo_2",
           "nombre": "Cordón Industrial (San Lorenzo - Villa Gdor. Gálvez)",
-          "electores": 280000
+          "electores": 280000,
+          "imagen": null,
+          "perfil": false
         },
         {
           "id": "grupo_3",
           "nombre": "Santa Fe Capital y Santo Tomé",
-          "electores": 410000
+          "electores": 410000,
+          "imagen": null,
+          "perfil": false
         },
         {
           "id": "grupo_4",
           "nombre": "Cinturón Agrícola (Rafaela - Sunchales - Esperanza)",
-          "electores": 320000
+          "electores": 320000,
+          "imagen": null,
+          "perfil": false
         },
         {
           "id": "grupo_5",
           "nombre": "Sur Productivo (Venado Tuerto - Casilda - Firmat)",
-          "electores": 290000
+          "electores": 290000,
+          "imagen": null,
+          "perfil": false
         },
         {
           "id": "grupo_6",
           "nombre": "Corredor Oeste (San Lorenzo - Cañada de Gómez)",
-          "electores": 180000
+          "electores": 180000,
+          "imagen": null,
+          "perfil": false
         },
         {
           "id": "grupo_7",
           "nombre": "Norte Agroindustrial (Reconquista - Avellaneda)",
-          "electores": 160000
+          "electores": 160000,
+          "imagen": null,
+          "perfil": false
         },
         {
           "id": "grupo_8",
           "nombre": "Pueblos del Centro (Colonias Suizas e Italianas)",
-          "electores": 240000
+          "electores": 240000,
+          "imagen": null,
+          "perfil": false
         },
         {
           "id": "grupo_9",
           "nombre": "Zona Rural Norte (9 de Julio - Vera - San Cristóbal)",
-          "electores": 140000
+          "electores": 140000,
+          "imagen": null,
+          "perfil": false
         },
         {
           "id": "grupo_10",
           "nombre": "Pequeñas Localidades y Comunas Dispersas",
-          "electores": 260000
+          "electores": 260000,
+          "imagen": null,
+          "perfil": false
         }
       ]
     }
