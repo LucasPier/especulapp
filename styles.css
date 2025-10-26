@@ -530,13 +530,23 @@ section h2 {
     object-fit: contain;
     transition: transform 0.15s ease-out, filter 0.15s ease-out;
     transform-origin: center center;
+    /* Borde gris suave de 1px que respeta la transparencia */
+    filter: drop-shadow(1px 0 0 #9b9b9b)
+            drop-shadow(-1px 0 0 #9b9b9b)
+            drop-shadow(0 1px 0 #9b9b9b)
+            drop-shadow(0 -1px 0 #9b9b9b);
 }
 
 /* Efecto zoom al presionar la imagen */
 .grupo-imagen:active img {
     transform: scale(2);
     z-index: 1000;
-    filter: drop-shadow(0 0 6px rgba(255, 255, 255, 1)) 
+    /* Al ampliar: borde + shadow blanco */
+    filter: drop-shadow(1px 0 0 #9b9b9b)
+            drop-shadow(-1px 0 0 #9b9b9b)
+            drop-shadow(0 1px 0 #9b9b9b)
+            drop-shadow(0 -1px 0 #9b9b9b)
+            drop-shadow(0 0 6px rgba(255, 255, 255, 1)) 
             drop-shadow(0 0 10px rgba(255, 255, 255, 1))
             drop-shadow(0 0 14px rgba(255, 255, 255, 0.8));
 }
