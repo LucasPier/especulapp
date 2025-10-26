@@ -1255,10 +1255,13 @@ function renderizarGraficoPerfil(contenedor, grupoId) {
             </div>
             <div class="grupo-electores">👥 ${formatearNumero(grupo.electores)} electores</div>
             ${infoHTML}
-            ${botoneraHTML}
+            <div class="grupo-info-escrutinio">
+                <div>Sin datos reales</div>
+            </div>
         </div>
         <div class="grupo-controles">
             ${controlesHTML}
+            ${botoneraHTML}
         </div>
         <div class="grupo-resultados" id="resultados-${grupo.id}"></div>
     `;
@@ -1390,10 +1393,10 @@ function renderizarGraficoPerfil(contenedor, grupoId) {
     
     // Caso especial: blancos solo muestran color si se incluyen como válidos
     const esBlancos = input.classList.contains('range-blancos');
-    const colorFinal = (esBlancos && !incluirBlancosComoValidos) ? '#ddd' : color;
+    const colorFinal = (esBlancos && !incluirBlancosComoValidos) ? '#ecf0f1' : color;
     
     // Aplicar gradiente: color hasta el valor, gris después
-    input.style.background = `linear-gradient(to right, ${colorFinal} 0%, ${colorFinal} ${porcentaje}%, #ddd ${porcentaje}%, #ddd 100%)`;
+    input.style.background = `linear-gradient(to right, ${colorFinal} 0%, ${colorFinal} ${porcentaje}%, #ecf0f1 ${porcentaje}%, #ecf0f1 100%)`;
     
     // Establecer variable CSS para el color del thumb (círculo)
     input.style.setProperty('--thumb-color', colorFinal);

@@ -33,8 +33,8 @@
 // ⚠️ IMPORTANTE: Incrementa solo la versión del grupo que modificaste
 const CACHE_VERSIONS = {
     HTML: '1.2.0',    // Agregado script local de Plotly
-    CSS: '1.3.0',     // Estilos para imágenes de frentes
-    JS: '1.3.0',      // Renderizado de imágenes de frentes en gráficos
+    CSS: '1.3.1',     // Refinamientos visuales: alturas, colores coherentes (#ecf0f1), sombreados
+    JS: '1.3.1',      // Actualización de colores de gradientes para coherencia visual
     JSON: '1.3.0',    // Agregada propiedad "imagen" en configuracion_eleccion.json
     IMG: '1.3.0'      // Agregadas imágenes de frentes políticos
 };
