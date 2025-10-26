@@ -5,7 +5,7 @@ EspeculApp is a **vanilla JavaScript electoral simulation library** for Ciudad F
 
 **Architecture**: The application is encapsulated in an IIFE (Immediately Invoked Function Expression) that exposes a single global object `EspeculApp` with public API methods.
 
-**Version**: 1.1.2
+**Version**: 1.3.0
 
 ## Module Structure
 
@@ -148,8 +148,17 @@ try {
 formatearNumero(123456)  // Returns "123.456" (European notation)
 ```
 
-### Color Indicators
-Use `<span class="color-indicator" style="background-color: ${color}"></span>` for party colors, NOT emoji for frentes (only `❌` for nulos)
+### Visual Indicators
+- **Frentes con imagen**: Use `obtenerIndicadorVisual(resultado)` which returns `<img>` if `resultado.imagen` exists, otherwise returns color circle
+- **Color circles**: `<span class="color-indicator" style="background-color: ${color}"></span>` for frentes without images
+- **Nulos**: Always use `❌` emoji (no image support)
+
+### Frente Images
+When rendering frentes in any UI element:
+1. Check if `frente.imagen` or `resultado.imagen` exists
+2. If yes: render `<img src="${imagen}" alt="${nombre}" class="frente-imagen">`
+3. If no/null: render color circle with `.color-indicator`
+4. For `.cargos-obtenidos`, add class `.cargos-obtenidos-con-imagen` if frente has image
 
 ### Event Listener Attachment
 When creating cards, call `agregarEventListeners(card, grupoId)` which attaches:

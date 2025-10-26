@@ -681,7 +681,13 @@ async function cargarDatosPerfiles() {
     if (resultado.id === 'nulos') {
         return '❌'; // Cruz roja para nulos
     }
-    // Para todos los demás (frentes y blancos), usar círculo de color
+    
+    // Si el resultado tiene imagen, usarla en lugar del círculo de color
+    if (resultado.imagen) {
+        return `<img src="${resultado.imagen}" alt="${resultado.nombre}" class="frente-imagen">`;
+    }
+    
+    // Para los demás (frentes sin imagen y blancos), usar círculo de color
     return `<span class="color-indicator" style="background-color: ${resultado.color}"></span>`;
 }
 
@@ -853,6 +859,7 @@ function renderizarGraficoPerfil(contenedor, grupoId) {
                 id: frente.id,
                 nombre: frente.nombre,
                 color: frente.color,
+                imagen: frente.imagen || null,
                 votos: votos,
                 porcentaje: porcentaje,
                 esBarra: true
@@ -952,6 +959,7 @@ function renderizarGraficoPerfil(contenedor, grupoId) {
             id: frente.id,
             nombre: frente.nombre,
             color: frente.color,
+            imagen: frente.imagen || null,
             votos: votos,
             porcentaje: porcentaje,
             esBarra: true
@@ -1117,11 +1125,17 @@ function renderizarGraficoPerfil(contenedor, grupoId) {
     // Controles para cada frente
     configEleccion.eleccion.frentes.forEach(frente => {
         const valorInicial = estadoFinal.frentes[frente.id] || 0;
+        
+        // Generar indicador visual (imagen o círculo de color)
+        const indicadorVisual = frente.imagen 
+            ? `<img src="${frente.imagen}" alt="${frente.nombre}" class="frente-imagen">`
+            : `<span class="color-indicator" style="background-color: ${frente.color}"></span>`;
+        
         controlesHTML += `
             <div class="control-item">
                 <div class="control-label">
                     <span class="control-label-name">
-                        <span class="color-indicator" style="background-color: ${frente.color}"></span>
+                        ${indicadorVisual}
                         ${frente.nombre}
                     </span>
                     <span class="control-value" id="valor-${grupo.id}-${frente.id}">100</span>
@@ -1727,6 +1741,7 @@ function sincronizarInputsConEstado(grupoId) {
             id: frente.id,
             nombre: frente.nombre,
             color: frente.color,
+            imagen: frente.imagen || null,
             votos: votos,
             porcentaje: porcentaje,
             esBarra: true
@@ -1964,7 +1979,8 @@ function sincronizarInputsConEstado(grupoId) {
             const nombreCargo = resultado.cargos === 1 
                 ? obtenerNombreCargoSingular(resultado.id)
                 : configEleccion.eleccion.nombreCargoPlural;
-            textoCargos = `<div class="cargos-obtenidos">${resultado.cargos} ${nombreCargo}</div>`;
+            const claseConImagen = resultado.imagen ? ' cargos-obtenidos-con-imagen' : '';
+            textoCargos = `<div class="cargos-obtenidos${claseConImagen}">${resultado.cargos} ${nombreCargo}</div>`;
         }
         
         // Mostrar con barra de progreso
@@ -2039,10 +2055,16 @@ function obtenerNombreCargoSingular(frenteId) {
         if (cargosDiv) {
             // Actualizar texto existente
             cargosDiv.textContent = textoCargos;
+            // Actualizar clase según si tiene imagen
+            if (resultado.imagen) {
+                cargosDiv.classList.add('cargos-obtenidos-con-imagen');
+            } else {
+                cargosDiv.classList.remove('cargos-obtenidos-con-imagen');
+            }
         } else {
             // Crear elemento nuevo
             cargosDiv = document.createElement('div');
-            cargosDiv.className = 'cargos-obtenidos';
+            cargosDiv.className = resultado.imagen ? 'cargos-obtenidos cargos-obtenidos-con-imagen' : 'cargos-obtenidos';
             cargosDiv.textContent = textoCargos;
             // Insertar antes de la barra de progreso
             const barraProgreso = barraDiv.querySelector('.barra-progreso');
@@ -2600,7 +2622,7 @@ function actualizarBarraMiniExistente(barraDiv, resultado) {
         init,
         destroy,
         isReady,
-        version: '1.2.0'
+        version: '1.3.0'
     };
 })();
 

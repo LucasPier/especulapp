@@ -1,6 +1,6 @@
 # EspeculApp - Simulador Electoral
 
-![Versión](https://img.shields.io/badge/versi%C3%B3n-1.2.0-blue)
+![Versión](https://img.shields.io/badge/versi%C3%B3n-1.3.0-blue)
 ![JavaScript](https://img.shields.io/badge/JavaScript-ES6+-yellow)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
@@ -12,11 +12,12 @@ Una librería JavaScript encapsulada para simular escenarios electorales con int
 - 🔄 **Múltiples configuraciones**: Selecciona entre diferentes agrupaciones electorales
 - 📊 **Datos en tiempo real**: Polling automático cada 60 segundos por configuración
 - 🖼️ **Imágenes de grupos**: Soporte opcional para mostrar imágenes representativas
+- 🎨 **Imágenes de frentes**: Cada frente político puede tener su propia imagen
 - 📈 **Perfiles electorales**: Gráficos interactivos de resultados de elecciones anteriores con Plotly
 - 💾 **Persistencia automática**: Guarda el estado independiente de cada configuración
 - 🎨 **Interfaz responsiva**: Funciona en desktop, tablet y móvil
 - 🎯 **Simulaciones interactivas**: Controles de slider para ajustar parámetros
-- � **Visualización dinámica**: Gráficos de barras actualizados en tiempo real
+- 📊 **Visualización dinámica**: Gráficos de barras actualizados en tiempo real
 - 📱 **Progressive Web App**: Funciona offline e instalable en cualquier dispositivo
 
 ## 📦 Instalación
@@ -171,7 +172,10 @@ Define los frentes políticos y escenarios de votación:
       {
         "id": "frente_1",
         "nombre": "Frente A",
-        "color": "#3498db"
+        "color": "#3498db",
+        "abreviatura": "FA",
+        "canidate": "M",
+        "imagen": "img/frentes/frente_1.webp"  // Opcional: null si no tiene imagen
       }
     ],
     "escenarios": [
@@ -187,6 +191,14 @@ Define los frentes políticos y escenarios de votación:
   }
 }
 ```
+
+**Propiedades de frentes:**
+- `id`: Identificador único del frente
+- `nombre`: Nombre completo del frente
+- `color`: Color hexadecimal para visualizaciones
+- `abreviatura`: Siglas del frente
+- `canidate`: Género del candidato ("M" o "F") para nombres de cargos
+- `imagen`: Ruta relativa a la imagen del frente, o `null` si no tiene imagen
 
 ### configuracion_grupos.json
 

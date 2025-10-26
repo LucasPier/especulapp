@@ -13,28 +13,32 @@
         "nombre": "Fuerza Patria",
         "color": "#4A90E2",
         "abreviatura": "FP",
-        "canidate": "F"
+        "canidate": "F",
+        "imagen": "img/frentes/frente_1.webp"
       },
       {
         "id": "frente_2",
         "nombre": "La Libertad Avanza",
         "color": "#7B68EE",
         "abreviatura": "LLA",
-        "canidate": "M"
+        "canidate": "M",
+        "imagen": "img/frentes/frente_2.webp"
       },
       {
         "id": "frente_3",
         "nombre": "Provincias Unidas",
         "color": "#f5a110",
         "abreviatura": "PU",
-        "canidate": "F"
+        "canidate": "F",
+        "imagen": "img/frentes/frente_3.webp"
       },
       {
         "id": "otros",
         "nombre": "Otros",
         "color": "#FFA07A",
         "abreviatura": "Otros",
-        "canidate": "M"
+        "canidate": "M",
+        "imagen": null
       }
     ],
     "escenarios": [

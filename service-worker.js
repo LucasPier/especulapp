@@ -33,10 +33,10 @@
 // ⚠️ IMPORTANTE: Incrementa solo la versión del grupo que modificaste
 const CACHE_VERSIONS = {
     HTML: '1.2.0',    // Agregado script local de Plotly
-    CSS: '1.2.4',     // Optimización de espacio para PC
-    JS: '1.2.0',      // Renderizado de imágenes y gráficos de perfiles con Plotly
-    JSON: '1.2.0',    // Agregadas propiedades imagen/perfil en configuracion_grupos.json + perfiles/
-    IMG: '1.2.0'      // Agregadas imágenes de clusters de grupos
+    CSS: '1.3.0',     // Estilos para imágenes de frentes
+    JS: '1.3.0',      // Renderizado de imágenes de frentes en gráficos
+    JSON: '1.3.0',    // Agregada propiedad "imagen" en configuracion_eleccion.json
+    IMG: '1.3.0'      // Agregadas imágenes de frentes políticos
 };
 
 // Prefijo base para todos los cachés
@@ -82,6 +82,10 @@ const CACHE_RESOURCES = {
         './img/icono.svg',
         './img/icono128.png',
         './img/icono512.png',
+        // Imágenes de frentes políticos
+        './img/frentes/frente_1.webp',
+        './img/frentes/frente_2.webp',
+        './img/frentes/frente_3.webp',
         // Imágenes de clusters/grupos
         './img/clusteres/cluster_grupo_1.webp',
         './img/clusteres/cluster_grupo_2.webp',

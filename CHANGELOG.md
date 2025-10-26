@@ -1,5 +1,81 @@
 # 📝 Registro de Cambios - EspeculApp
 
+## Versión 1.3.0 - Imágenes de Frentes Políticos
+
+### Fecha: 26 de Octubre de 2025
+
+#### ✨ Nuevas Funcionalidades
+
+##### 🖼️ Sistema de Imágenes de Frentes
+- ✅ **Imágenes de frentes**: Cada frente político puede tener su propia imagen representativa
+- ✅ **Propiedad `imagen`**: String con ruta relativa en `configuracion_eleccion.json` o `null` para frentes sin imagen
+- ✅ **Visualización inteligente**: Las imágenes reemplazan el círculo de color cuando están disponibles
+- ✅ **Ubicaciones de renderizado**:
+  - Gráfico de resultados globales (barras principales)
+  - Gráficos mini en tarjetas de grupos electorales
+  - Controles de simulación (sliders)
+  - Grupos con datos reales del servidor
+
+##### 🎨 Estilos y Diseño
+- ✅ **Clase `.frente-imagen`**: Imágenes de 24x24px con `border-radius: 4px`
+- ✅ **Alineación perfecta**: Uso de flexbox para alinear imagen y texto
+- ✅ **Compatibilidad**: Los frentes sin imagen mantienen el círculo de color original
+- ✅ **Margin condicional**: `.cargos-obtenidos-con-imagen` con 33px para alineación correcta
+
+#### 🔧 Mejoras Técnicas
+
+##### JSON (`configuracion_eleccion.json`)
+```json
+{
+  "id": "frente_1",
+  "nombre": "Fuerza Patria",
+  "color": "#4A90E2",
+  "abreviatura": "FP",
+  "canidate": "F",
+  "imagen": "img/frentes/frente_1.webp"  // Nueva propiedad
+}
+```
+
+##### JavaScript (`app.js`)
+**Nuevas Funciones**:
+- Modificada `obtenerIndicadorVisual(resultado)`: Detecta y renderiza imágenes cuando están disponibles
+
+**Funciones Modificadas**:
+- `renderizarGrupoConDatosReales()`: Agrega propiedad `imagen` a objetos de resultados
+- `actualizarTarjetaDatosReales()`: Agrega propiedad `imagen` a objetos de resultados
+- `calcularYActualizarResultados()`: Agrega propiedad `imagen` a resultados globales
+- `crearBarraHTML()`: Aplica clase condicional `cargos-obtenidos-con-imagen`
+- `actualizarBarraExistente()`: Maneja dinámicamente la clase según presencia de imagen
+- Controles de simulación: Renderiza imagen o círculo de color según disponibilidad
+
+##### CSS (`styles.css`)
+**Nuevas Clases**:
+- `.frente-imagen`: Estilo para imágenes de frentes (24x24px, border-radius 4px)
+- `.cargos-obtenidos-con-imagen`: Margin-left de 33px para alineación con imagen
+
+**Modificaciones**:
+- `.frente-nombre`: Agregado `display: flex` y `gap: 8px` para alineación
+
+##### Service Worker
+**Archivos Cacheados**:
+- `./img/frentes/frente_1.webp`
+- `./img/frentes/frente_2.webp`
+- `./img/frentes/frente_3.webp`
+
+**Versiones Actualizadas**:
+- `CSS`: 1.2.4 → 1.3.0
+- `JS`: 1.2.0 → 1.3.0
+- `JSON`: 1.2.0 → 1.3.0
+- `IMG`: 1.2.0 → 1.3.0
+
+#### 📊 Impacto Visual
+- Los frentes con imagen se destacan visualmente en todos los gráficos
+- Mejor identificación visual de cada frente político
+- Mantiene compatibilidad con frentes sin imagen (ej: "Otros")
+- Alineación consistente de información de cargos obtenidos
+
+---
+
 ## Versión 1.2.0 - Imágenes y Perfiles Electorales
 
 ### Fecha: 25 de Octubre de 2025

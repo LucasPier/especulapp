@@ -364,6 +364,9 @@ section h2 {
 .frente-nombre {
     font-weight: 600;
     font-size: 1.1em;
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
 
 .frente-porcentaje {
@@ -381,8 +384,12 @@ section h2 {
     font-size: 0.75em;
     font-weight: 600;
     /* color: var(--text-primary); */
-    margin-left: 23px;
+    margin-left: 25px;
     color: gray;
+}
+
+.cargos-obtenidos-con-imagen {
+    margin-left: 33px;
 }
 
 .barra-progreso {
@@ -608,6 +615,15 @@ section h2 {
     height: 16px;
     border-radius: 50%;
     display: inline-block;
+}
+
+.frente-imagen {
+    width: 24px;
+    height: 24px;
+    border-radius: 4px;
+    display: inline-block;
+    object-fit: cover;
+    vertical-align: middle;
 }
 
 .control-value {
