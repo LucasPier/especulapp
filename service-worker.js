@@ -33,7 +33,7 @@
 // ⚠️ IMPORTANTE: Incrementa solo la versión del grupo que modificaste
 const CACHE_VERSIONS = {
     HTML: '1.2.0',    // Agregado script local de Plotly
-    CSS: '1.2.3',     // Imágenes y perfiles para grupos electorales
+    CSS: '1.2.4',     // Optimización de espacio para PC
     JS: '1.2.0',      // Renderizado de imágenes y gráficos de perfiles con Plotly
     JSON: '1.2.0',    // Agregadas propiedades imagen/perfil en configuracion_grupos.json + perfiles/
     IMG: '1.2.0'      // Agregadas imágenes de clusters de grupos
