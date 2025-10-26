@@ -34,7 +34,7 @@
 const CACHE_VERSIONS = {
     HTML: '1.2.0',    // Agregado script local de Plotly
     CSS: '1.3.1',     // Refinamientos visuales: alturas, colores coherentes (#ecf0f1), sombreados
-    JS: '1.3.1',      // Actualización de colores de gradientes para coherencia visual
+    JS: '1.3.2',      // Fix: thumb de votos blancos mantiene color constante (#95a5a6)
     JSON: '1.3.0',    // Agregada propiedad "imagen" en configuracion_eleccion.json
     IMG: '1.3.0'      // Agregadas imágenes de frentes políticos
 };

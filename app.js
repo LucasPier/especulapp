@@ -1391,15 +1391,16 @@ function renderizarGraficoPerfil(contenedor, grupoId) {
     // Calcular el porcentaje
     const porcentaje = (valor / max) * 100;
     
-    // Caso especial: blancos solo muestran color si se incluyen como válidos
+    // Caso especial: blancos solo muestran color de fondo si se incluyen como válidos
     const esBlancos = input.classList.contains('range-blancos');
-    const colorFinal = (esBlancos && !incluirBlancosComoValidos) ? '#ecf0f1' : color;
+    const colorFondo = (esBlancos && !incluirBlancosComoValidos) ? '#ecf0f1' : color;
     
     // Aplicar gradiente: color hasta el valor, gris después
-    input.style.background = `linear-gradient(to right, ${colorFinal} 0%, ${colorFinal} ${porcentaje}%, #ecf0f1 ${porcentaje}%, #ecf0f1 100%)`;
+    input.style.background = `linear-gradient(to right, ${colorFondo} 0%, ${colorFondo} ${porcentaje}%, #ecf0f1 ${porcentaje}%, #ecf0f1 100%)`;
     
     // Establecer variable CSS para el color del thumb (círculo)
-    input.style.setProperty('--thumb-color', colorFinal);
+    // El thumb de blancos siempre mantiene su color original (#95a5a6)
+    input.style.setProperty('--thumb-color', color);
 }
 
 // Actualizar todos los colores de range inputs en un grupo
